@@ -1,0 +1,76 @@
+// Filename: public/public_initials.js 
+//
+// Code written in public files is shared by your site's
+// Backend, page code, and site code environments.
+//
+// Use public files to hold utility functions that can 
+// be called from multiple locations in your site's code.
+
+export function add(param1, param2) {
+	return param1 + param2;
+}
+
+// Main variable that holds task_id
+// --------------------------------
+export var threshold_styling_select = 10;
+export var threshold_pattern_select = 25;
+export var max_themes_upload = 10;
+export var min_themes_upload = 5;
+export var main_base_url = "https://venkatesh74.wixsite.com"
+
+// Department and their category values
+// ------------------------------------
+export const dep_values = [
+{value:"GL", label: "Girls"},
+{value:"BY", label: "Boys"},
+{value:"WM", label: "Women"},
+{value:"MN", label: "Men"}
+];
+export const cat_values_girls = [
+{value:"0", label: "Woven Dresses"},
+{value:"2", label: "Woven Tops"},
+{value:"7", label: "Woven Pants"}
+];
+export const cat_values_boys = [
+{value:"13", label: "Polos"},
+{value:"14", label: "Woven Shirts"},
+{value:"16", label: "Woven Pants"}
+];
+export const cat_values_women = [
+{value:"20", label: "Woven Dresses"},
+{value:"22", label: "Woven Tops"},
+{value:"27", label: "Woven Pants"}
+];
+export const cat_values_men = [
+{value:"33", label: "Polos"},
+{value:"34", label: "Woven Shirts"},
+{value:"36", label: "Woven Pants"}
+];
+
+
+
+
+
+// The following code demonstrates how to call the add
+// function from your site's page code or site code.
+
+/* 
+import {add} from 'public/public_initials.js'
+
+$w.onReady(function () {	
+    let sum = add(6,7);
+    console.log(sum);
+});
+*/
+
+
+//The following code demonstrates how to call the add 
+//function in one of your site's backend files.
+
+/* 
+import {add} from 'public/public_initials.js'
+
+export function usingFunctionFromPublic(a, b) {
+	return add(a,b);
+}
+*/
