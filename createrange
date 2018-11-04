@@ -1,0 +1,1078 @@
+// For full API documentation, including code examples, visit http://wix.to/94BuAAs
+
+// imports
+// -------
+import { getrangepdf, getrangepdfurl, gettaskstatus, getallpatternsurl, getallstylingsurl, savewiximagetogcs, createnewpatterns, prepareconfirmedstylings, createtexturesforselection, generateideasforuser } from 'backend/aModule';
+import { dep_values, cat_values_girls, cat_values_boys, cat_values_women, cat_values_men, threshold_styling_select, max_themes_upload, min_themes_upload, main_base_url, threshold_pattern_select } from 'public/public_initials.js';
+import wixUsers from 'wix-users';
+import wixLocation from 'wix-location';
+
+// Declarations for the page
+// -------------------------
+var selected_stylings_main = [];
+var uploadcounter = 0;
+var main_task_id;
+var main_user_id;
+var main_gen_id;
+var thumbnail_local_urls = [];
+var to_be_uploaded_local_urls = [];
+var selected_patterns_main = [];
+
+// Function to convert array to comma string for API
+// -------------------------------------------------
+export function getcorrectstring(in_array) {
+
+	var out_string = "";
+
+	for (var i in in_array) {
+		out_string += String(in_array[i]) + ",";
+	}
+
+	out_string = out_string.substring(0, out_string.length - 1);
+
+	return out_string
+}
+
+// Function that sets dropdown menu & other initial settings
+// ---------------------------------------------------------
+$w.onReady(async function () {
+
+	// Getting user id here -- user will have to be logged in to view this page
+	// ------------------------------------------------------------------------
+	let user = wixUsers.currentUser;
+	main_user_id = await user.getEmail();
+
+	// Fixed setting displays
+	// ----------------------
+	$w('#depdropdown').options = dep_values;
+
+	// Master check to see if task_id is in the URL
+	// --------------------------------------------
+	let query = wixLocation.query;
+	var urltaskid = String(query["task_id"]);
+
+	if (urltaskid.includes("PMTASK") === true) {
+
+		// Setting main task id
+		// --------------------
+		main_task_id = urltaskid;
+
+		// USE TASK STATUS CODE AND SET DISPLAY ACCORDINGLY
+		// ------------------------------------------------
+		let task_url_reposnse = await gettaskstatus(main_user_id, main_task_id);
+		var status_newpats = task_url_reposnse["new_patterns"]
+		var status_prepstyles = task_url_reposnse["prepare_stylings"]
+		var status_createtextures = task_url_reposnse["create_textures"]
+
+		// By the flow new patterns API would be initiated -- could be 1 or 2
+		// Conditions to check -
+		// 
+		// 1. New patters build initialised but styligs NOT chosen - user exists after clicking pick stylings (1/2,0,0)
+		// 2. New patterns and prepare styling initialsed but patterns not chosen - user exits after clicking submit stylings (1/2,1/2,0)
+		// 3. New patterns and prepare styling initialsed but patterns not done yet - (1/2,1/2,0)
+		// 3. BY DEFAULT WE WILL REDIRECT USERS TO MY TASKS PAGE AFTER submiting styling incase new patterns build is NOT complete by then!
+
+		if (status_newpats >= 1 && status_prepstyles === 0 && status_createtextures === 0) {
+
+			// Ladnding the user at pick stylings
+			// ---------------------------------
+
+			// Display settings ----------------------------------------------------
+
+			// 0. Progress box display settings
+			// --------------------------------
+			$w('#newrangeprogressbox').expand();
+			$w('#prog1button').enable();
+			$w('#prog2button').disable();
+			$w('#prog3button').disable();
+			$w('#prog1linegreen').show();
+			$w('#prog2linegreen').hide();
+			$w('#prog1linegrey').hide();
+			$w('#prog2linegrey').show();
+
+			// 1. Upload theme box display settings
+			// ------------------------------------
+			$w('#uploadcreatetaskbox').collapse();
+			$w('#thumbnailrepeater').collapse();
+			$w('#thumbnailrepeater').data = [];
+			$w('#uploadfiletext').text = "";
+			$w('#pickstylingsbutton').disable();
+			$w('#newpatternserrorlabel').text = "";
+
+			// 2. Pick styling box display settings
+			// ------------------------------------
+			$w('#choosestylingsbox').expand();
+			$w('#stylingrepeater').collapse();
+			$w('#catdropdown').disable();
+			$w('#uploadstylingsbutton').collapse();
+			$w('#stylingscounterlabel').text = "";
+
+			// 3. Pick patterns box display settings
+			// --------------------------------------
+			$w('#pickpatternsbox').collapse();
+			$w('#pickedpatternscounterlabel').text = "";
+			$w('#allpatternsrepeater').collapse();
+			$w('#allpatternsrepeater').data = [];
+			$w('#createtexturesbutton').disable();
+
+			// more to come here as we add..
+
+			// 4. AI initialised box display settings
+			// --------------------------------------
+			$w('#aiinitialisedbox').collapse();
+			$w('#aiinitialisedheader').text = "";
+			$w('#aiinitialisedpara').text = "";
+
+			// 5. Generate ideas box
+			// ---------------------
+			$w('#generateideasbox').collapse();
+			// more to come
+
+			// END OF DISPLAY SETTINGS -----------------------------------------------
+
+		} else if (status_newpats === 1 && status_prepstyles >= 1 && status_createtextures === 0) {
+
+			// Ladnding the user at AI initialised since patterns build is still underway and user finished styling picking
+			// ------------------------------------------------------------------------------------------------------------
+
+			// Display settings ----------------------------------------------------
+
+			// 0. Progress box display settings
+			// --------------------------------
+			$w('#newrangeprogressbox').expand();
+			$w('#prog1button').enable();
+			$w('#prog2button').enable();
+			$w('#prog3button').disable();
+			$w('#prog1linegreen').show();
+			$w('#prog2linegreen').hide();
+			$w('#prog1linegrey').hide();
+			$w('#prog2linegrey').show();
+
+			// 1. Upload theme box display settings
+			// ------------------------------------
+			$w('#uploadcreatetaskbox').collapse();
+			$w('#thumbnailrepeater').collapse();
+			$w('#thumbnailrepeater').data = [];
+			$w('#uploadfiletext').text = "";
+			$w('#pickstylingsbutton').disable();
+			$w('#newpatternserrorlabel').text = "";
+
+			// 2. Pick styling box display settings
+			// ------------------------------------
+			$w('#choosestylingsbox').collapse();
+			$w('#stylingrepeater').collapse();
+			$w('#catdropdown').disable();
+			$w('#uploadstylingsbutton').collapse();
+			$w('#stylingscounterlabel').text = "";
+
+			// 3. Pick patterns box display settings
+			// --------------------------------------
+			$w('#pickpatternsbox').collapse();
+			$w('#pickedpatternscounterlabel').text = "";
+			$w('#allpatternsrepeater').collapse();
+			$w('#allpatternsrepeater').data = [];
+			$w('#createtexturesbutton').disable();
+
+			// 4. AI initialised box display settings
+			// --------------------------------------
+			$w('#aiinitialisedbox').expand();
+			$w('#aiinitialisedheader').text = "AI Initialised"
+			$w('#aiinitialisedpara').text = "Our AI is learning features from your inspiration images & stylings. Give it a while and then you can pick the patterns you like to start creating your range.";
+
+			// 5. Generate ideas box
+			// ---------------------
+			$w('#generateideasbox').collapse();
+			// more to come
+
+			// END OF DISPLAY SETTINGS -----------------------------------------------
+
+		} else if (status_newpats > 1 && status_prepstyles >= 1 && status_createtextures === 0) {
+
+			// Ladnding the user at pick patterns on continuos flow
+			// ----------------------------------------------------
+
+			// Display settings ----------------------------------------------------
+
+			// 0. Progress box display settings
+			// --------------------------------
+			$w('#newrangeprogressbox').expand();
+			$w('#prog1button').enable();
+			$w('#prog2button').enable();
+			$w('#prog3button').disable();
+			$w('#prog1linegreen').show();
+			$w('#prog2linegreen').show();
+			$w('#prog1linegrey').hide();
+			$w('#prog2linegrey').hide();
+
+			// 1. Upload theme box display settings
+			// ------------------------------------
+			$w('#uploadcreatetaskbox').collapse();
+			$w('#thumbnailrepeater').collapse();
+			$w('#thumbnailrepeater').data = [];
+			$w('#uploadfiletext').text = "";
+			$w('#pickstylingsbutton').disable();
+			$w('#newpatternserrorlabel').text = "";
+
+			// 2. Pick styling box display settings
+			// ------------------------------------
+			$w('#choosestylingsbox').collapse();
+			$w('#stylingrepeater').collapse();
+			$w('#catdropdown').disable();
+			$w('#uploadstylingsbutton').collapse();
+			$w('#stylingscounterlabel').text = "";
+
+			// 3. Pick patterns box display settings
+			// --------------------------------------
+			$w('#pickpatternsbox').expand();
+			$w('#pickedpatternscounterlabel').text = "";
+			$w('#allpatternsrepeater').collapse();
+			$w('#allpatternsrepeater').data = [];
+			load_all_patterns(main_user_id, main_task_id);
+
+			// 4. AI initialised box display settings
+			// --------------------------------------
+			$w('#aiinitialisedbox').collapse();
+			$w('#aiinitialisedheader').text = "";
+			$w('#aiinitialisedpara').text = "";
+
+			// 5. Generate ideas box
+			// ---------------------
+			$w('#generateideasbox').collapse();
+			// more to come
+
+			// END OF DISPLAY SETTINGS -----------------------------------------------
+
+		} else if (status_newpats > 1 && status_prepstyles >= 1 && status_createtextures === 1) {
+
+			// ALL done from user input display
+			// Display settings ----------------------------------------------------
+
+			// 0. Progress box display settings
+			// --------------------------------
+			$w('#newrangeprogressbox').expand();
+			$w('#prog1button').enable();
+			$w('#prog2button').enable();
+			$w('#prog3button').enable();
+			$w('#prog1linegreen').show();
+			$w('#prog2linegreen').show();
+			$w('#prog1linegrey').hide();
+			$w('#prog2linegrey').hide();
+
+			// 1. Upload theme box display settings
+			// ------------------------------------
+			$w('#uploadcreatetaskbox').collapse();
+			$w('#thumbnailrepeater').collapse();
+			$w('#thumbnailrepeater').data = [];
+			$w('#uploadfiletext').text = "";
+			$w('#pickstylingsbutton').disable();
+			$w('#newpatternserrorlabel').text = "";
+
+			// 2. Pick styling box display settings
+			// ------------------------------------
+			$w('#choosestylingsbox').collapse();
+			$w('#stylingrepeater').collapse();
+			$w('#catdropdown').disable();
+			$w('#uploadstylingsbutton').collapse();
+			$w('#stylingscounterlabel').text = "";
+
+			// 3. Pick patterns box display settings
+			// --------------------------------------
+			$w('#pickpatternsbox').collapse();
+			$w('#pickedpatternscounterlabel').text = "";
+			$w('#allpatternsrepeater').collapse();
+			$w('#allpatternsrepeater').data = [];
+			$w('#createtexturesbutton').disable();
+
+			// 4. AI initialised box display settings
+			// --------------------------------------
+			$w('#aiinitialisedbox').expand();
+			$w('#aiinitialisedheader').text = "All Done. Hang in there while our AI completes"
+			$w('#aiinitialisedpara').text = "Your side of inputs is now done. Our AI is progressing through your inputs. Give it a few minutes and you can start generate your range. Follow progress of your task below.";
+
+			// 5. Generate ideas box
+			// ---------------------
+			$w('#generateideasbox').collapse();
+			// more to come
+
+			// END OF DISPLAY SETTINGS -----------------------------------------------
+
+		} else if (status_newpats > 1 && status_prepstyles > 1 && status_createtextures > 1) {
+
+			// Generate ideas display
+			// ----------------------
+			// Display settings ----------------------------------------------------
+
+			// 0. Progress box display settings
+			// --------------------------------
+			$w('#newrangeprogressbox').collapse();
+			$w('#prog1button').enable();
+			$w('#prog2button').enable();
+			$w('#prog3button').enable();
+			$w('#prog1linegreen').show();
+			$w('#prog2linegreen').show();
+			$w('#prog1linegrey').hide();
+			$w('#prog2linegrey').hide();
+
+			// 1. Upload theme box display settings
+			// ------------------------------------
+			$w('#uploadcreatetaskbox').collapse();
+			$w('#thumbnailrepeater').collapse();
+			$w('#thumbnailrepeater').data = [];
+			$w('#uploadfiletext').text = "";
+			$w('#pickstylingsbutton').disable();
+			$w('#newpatternserrorlabel').text = "";
+
+			// 2. Pick styling box display settings
+			// ------------------------------------
+			$w('#choosestylingsbox').collapse();
+			$w('#stylingrepeater').collapse();
+			$w('#catdropdown').disable();
+			$w('#uploadstylingsbutton').collapse();
+			$w('#stylingscounterlabel').text = "";
+
+			// 3. Pick patterns box display settings
+			// --------------------------------------
+			$w('#pickpatternsbox').collapse();
+			$w('#pickedpatternscounterlabel').text = "";
+			$w('#allpatternsrepeater').collapse();
+			$w('#allpatternsrepeater').data = [];
+			$w('#createtexturesbutton').disable();
+
+			// more to come here as we add..
+
+			// 4. AI initialised box display settings
+			// --------------------------------------
+			$w('#aiinitialisedbox').collapse();
+			$w('#aiinitialisedheader').text = "";
+			$w('#aiinitialisedpara').text = "";
+
+			// 5. Generate ideas box
+			// ---------------------
+			$w('#generateideasbox').expand();
+			$w('#generateideasbutton').disable()
+			// more to come
+
+			// END OF DISPLAY SETTINGS -----------------------------------------------
+
+		} else {
+
+			// Page loaded for user id but with invalid TASK ID - reloading page
+			// -----------------------------------------------------------------
+			let baseUrl = wixLocation.baseUrl;
+			await wixLocation.to(main_base_url + "/apitest/userinput")
+
+		}
+
+	} else {
+
+		// Setting MAIN TASK ID here
+		// -------------------------
+		var t_date = new Date();
+		var t_time = t_date.getTime();
+		main_task_id = "PMTASK" + String(t_time);
+
+		// Display settings ----------------------------------------------------
+
+		// 0. Progress box display settings
+		// --------------------------------
+		$w('#newrangeprogressbox').expand();
+		$w('#prog1button').enable();
+		$w('#prog2button').disable();
+		$w('#prog3button').disable();
+		$w('#prog1linegreen').hide();
+		$w('#prog2linegreen').hide();
+		$w('#prog1linegrey').show();
+		$w('#prog2linegrey').show();
+
+		// 1. Upload theme box display settings
+		// ------------------------------------
+		$w('#uploadcreatetaskbox').expand();
+		$w('#thumbnailrepeater').collapse();
+		$w('#thumbnailrepeater').data = [];
+		$w('#uploadfiletext').text = "";
+		$w('#pickstylingsbutton').disable();
+		$w('#newpatternserrorlabel').text = "";
+
+		// 2. Pick styling box display settings
+		// ------------------------------------
+		$w('#choosestylingsbox').collapse();
+		$w('#stylingrepeater').collapse();
+		$w('#catdropdown').disable();
+		$w('#uploadstylingsbutton').collapse();
+		$w('#stylingscounterlabel').text = "";
+
+		// 3. Pick patterns box display settings
+		// --------------------------------------
+		$w('#pickpatternsbox').collapse();
+		$w('#pickedpatternscounterlabel').text = "";
+		$w('#allpatternsrepeater').collapse();
+		$w('#allpatternsrepeater').data = [];
+		$w('#createtexturesbutton').disable();
+
+		// 4. AI initialised box display settings
+		// --------------------------------------
+		$w('#aiinitialisedbox').collapse();
+		$w('#aiinitialisedheader').text = "";
+		$w('#aiinitialisedpara').text = "";
+
+		// 5. Generate ideas box
+		// ---------------------
+		$w('#generateideasbox').collapse();
+		// more to come
+
+		// END OF DISPLAY SETTINGS -----------------------------------------------
+	}
+
+});
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// 1 UPLOAD THEME FUNCTIONS
+
+// 1.1 Function that uploads selected file to Local storage
+// --------------------------------------------------------
+
+export async function selectfile_change(event) {
+
+	// Null label text
+	// ---------------
+	var uploads_left;
+	$w('#uploadfiletext').text = '';
+	let files = $w("#selectfile").value;
+
+	try {
+
+		// Ensuring there is a files
+		// -------------------------
+		let sizes = files[0].size;
+
+		if (uploadcounter <= max_themes_upload) {
+
+			// Disabling button while ops running
+			// ----------------------------------
+			$w('#uploadfiletext').text = "Processing your file..";
+			$w('#selectfile').disable();
+
+			// Uploading image to wix storage and getting URL
+			// ----------------------------------------------
+			let uploadvalue = await $w("#selectfile").startUpload();
+			let u_url = uploadvalue.url;
+
+			// Appending local URL to be uploaded to GCS later
+			// -----------------------------------------------
+			to_be_uploaded_local_urls.push(u_url)
+
+			// Enabling buttons back
+			// ---------------------
+			$w('#selectfile').enable();
+
+			// Resetting thumbnail repeater
+			// ----------------------------	
+			$w('#thumbnailrepeater').collapse();
+			$w('#thumbnailrepeater').data = [];
+
+			// Updating thumbail url array and repeater items
+			// ----------------------------------------------
+			thumbnail_local_urls.push({ "src": u_url, "_id": String(thumbnail_local_urls.length + 10) });
+
+			// Setting repeater data
+			// ---------------------
+			$w('#thumbnailrepeater').onItemReady(($item, itemData, index) => {
+				$item("#actthumbimage").src = itemData.src;
+			});
+
+			// Resetting thumbnail repeater
+			// ----------------------------	
+			$w('#thumbnailrepeater').data = thumbnail_local_urls;
+			$w('#thumbnailrepeater').expand();
+
+			// Updating upload counter
+			// -----------------------
+			uploadcounter = uploadcounter + 1
+
+			// Updating uploadfile text
+			// ------------------------
+			uploads_left = max_themes_upload - uploadcounter;
+			$w('#uploadfiletext').text = uploads_left + " more images can be uploaded to this current task. A minimum of " + String(min_themes_upload) + " is required."
+
+			// Enabling create task button!
+			// ----------------------------
+			if (uploadcounter >= min_themes_upload) {
+
+				// Enable create task button
+				// -------------------------
+				$w('#pickstylingsbutton').enable();
+			}
+
+		} else {
+
+			$w('#selectfile').disable();
+			$w('#uploadfiletext').text = "No more uploads possible. We are limiting our themes to " + String(max_themes_upload) + " for pilot.";
+		}
+
+	} catch (err) {
+
+		// This means no file was selected
+		// -------------------------------
+		var do_nothing = "do nothing"
+		console.log(' no file :)')
+	}
+
+}
+
+// 1.2 Function to initiate ven new patterns API and exapnd pick stylings option
+// -----------------------------------------------------------------------------
+export async function pickstylingsbutton_click(event) {
+
+	// 0. First upload theme images to GCS
+	// -----------------------------------
+	$w('#pickstylingsbutton').disable();
+	$w('#pickstylingsbutton').label = "Working.."
+	for (var i in to_be_uploaded_local_urls) {
+
+		var u_url = to_be_uploaded_local_urls[i];
+		let save_call_res = await savewiximagetogcs(main_user_id, main_task_id, String(u_url))
+	}
+
+	// 1. Trigerring new patterns api
+	// ------------------------------
+	let url_reponse = await createnewpatterns(main_user_id, main_task_id);
+
+	if (url_reponse === "Thread started") {
+
+		// new patterns api successfully started
+		// -------------------------------------
+
+		// Display settings ----------------------------------------------------
+
+		// 0. Progress box display settings
+		// --------------------------------
+		$w('#newrangeprogressbox').expand();
+		$w('#prog1button').enable();
+		$w('#prog2button').disable();
+		$w('#prog3button').disable();
+		$w('#prog1linegreen').show();
+		$w('#prog2linegreen').hide();
+		$w('#prog1linegrey').hide();
+		$w('#prog2linegrey').show();
+
+		// 1. Upload theme box display settings
+		// ------------------------------------
+		$w('#uploadcreatetaskbox').collapse();
+		$w('#thumbnailrepeater').collapse();
+		$w('#thumbnailrepeater').data = [];
+		$w('#uploadfiletext').text = "";
+		$w('#pickstylingsbutton').disable();
+		$w('#newpatternserrorlabel').text = "";
+
+		// 2. Pick styling box display settings
+		// ------------------------------------
+		$w('#choosestylingsbox').expand();
+		$w('#stylingrepeater').collapse();
+		$w('#catdropdown').disable();
+		$w('#uploadstylingsbutton').collapse();
+		$w('#stylingscounterlabel').text = "";
+
+		// 3. Pick patterns box display settings
+		// --------------------------------------
+		$w('#pickpatternsbox').collapse();
+		$w('#pickedpatternscounterlabel').text = "";
+		$w('#allpatternsrepeater').collapse();
+		$w('#allpatternsrepeater').data = [];
+		$w('#createtexturesbutton').disable();
+
+		// 4. AI initialised box display settings
+		// --------------------------------------
+		$w('#aiinitialisedbox').collapse();
+		$w('#aiinitialisedheader').text = "";
+		$w('#aiinitialisedpara').text = "";
+
+		// 5. Generate ideas box
+		// ---------------------
+		$w('#generateideasbox').collapse();
+		// more to come
+
+		// END OF DISPLAY SETTINGS -----------------------------------------------
+
+
+	} else {
+
+		// new patterns api NOT started
+		// ----------------------------
+		$w('#pickstylingsbutton').enable();
+		$w('#pickstylingsbutton').label = "Done";
+		$w('#newpatternserrorlabel').text = "Something went wrong. Try again in a while. Here's the error response: " + String(url_reponse);
+
+	}
+}
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// 2. PICK STYLINGS FUNCTIONS
+
+// 2.1 Function that runs when departmentdropdown_change(event)
+// ------------------------------------------------------------
+export async function departmentdropdown_change(event, $w) {
+
+	// LOCAL Display settings ----------------------------------------------------
+	$w('#catdropdown').disable();
+	$w('#stylingrepeater').collapse();
+	$w('#stylingrepeater').data = [];
+	// LOCAL END OF DISPLAY SETTINGS -----------------------------------------------
+
+	// If statements
+	// -------------
+	if ($w('#depdropdown').value === "GL") {
+		$w('#catdropdown').options = cat_values_girls;
+		$w('#catdropdown').selectedIndex = 0;
+
+	} else if ($w('#depdropdown').value === "BY") {
+		$w('#catdropdown').options = cat_values_boys;
+		$w('#catdropdown').selectedIndex = 0;
+
+	} else if ($w('#depdropdown').value === "WM") {
+		$w('#catdropdown').options = cat_values_women;
+		$w('#catdropdown').selectedIndex = 0;
+
+	} else if ($w('#depdropdown').value === "MN") {
+		$w('#catdropdown').options = cat_values_men;
+		$w('#catdropdown').selectedIndex = 0;
+
+	}
+
+	// Calling retrievestylings function
+	// ---------------------------------
+	await retrievestylings();
+
+}
+
+// 2.2 Function on catdropdown change
+// -----------------------------------
+export async function catdropdown_change(event, $w) {
+
+	// Just call get stylings API
+	// -------------------------
+	await retrievestylings();
+
+	// END OF DISPLAY SETTINGS -----------------------------------------------
+}
+
+// 2.3 Function that loads stylings using styling API
+// ---------------------------------------------------
+export async function retrievestylings() {
+
+	// LOCAL Display settings
+	// ------------------------
+	$w('#stylingrepeater').collapse();
+	$w('#stylingrepeater').data = [];
+	$w('#catdropdown').disable();
+	$w('#depdropdown').disable();
+	$w('#uploadstylingsbutton').collapse();
+
+	let items = [];
+	var cat = $w('#catdropdown').value;
+
+	// Disabling button for repeat calls
+	// ---------------------------------
+	$w('#stylingscounterlabel').text = "Loading.."
+
+	// Calling API to get urls JSON
+	// ----------------------------
+	var line_urls = await getallstylingsurl(cat);
+
+	// Itering through the top level keys and setting items array to use
+	// -----------------------------------------------------------------
+	for (var key in line_urls) {
+		//items.push({ "src": line_urls[key]["img_url"], "description": line_urls[key]["img_name"], "title": line_urls[key]["img_name"] });
+		items.push({ "src": line_urls[key]["img_url"], "description": line_urls[key]["img_name"], "title": line_urls[key]["img_name"], "_id": key });
+	}
+
+	// Setting repeater data
+	// ---------------------
+	$w('#stylingrepeater').onItemReady(($item, itemData, index) => {
+		$item("#stylingimage").src = itemData.src;
+		$item("#imgnametext").text = itemData.title;
+		$item("#stylingcheckbox").value = itemData.title;
+	});
+
+	// Enabling repeater
+	// -----------------
+	$w('#stylingrepeater').data = items;
+	$w('#stylingrepeater').expand();
+	$w('#catdropdown').enable();
+	$w('#depdropdown').enable();
+
+	// Remembering and setting check box value from users selection
+	// ------------------------------------------------------------
+	$w('#stylingrepeater').forEachItem(($item, itemData, index) => {
+		var curr_value = $item("#stylingcheckbox").value;
+		var curr_value_index = selected_stylings_main.indexOf(curr_value);
+		if (curr_value_index < 0) {
+			$item("#stylingcheckbox").checked = false;
+		} else {
+			$item("#stylingcheckbox").checked = true;
+		}
+	});
+
+	if (selected_stylings_main.length >= threshold_styling_select) {
+		// Enable upload button
+		// --------------------
+		$w('#uploadstylingsbutton').expand();
+		$w('#uploadstylingsbutton').enable();
+		$w('#stylingscounterlabel').text = "( " + String(selected_stylings_main.length) + " styling(s) selected. You can now submit your stylings. )"
+
+	} else {
+		// Disable upload button
+		// --------------------
+		$w('#uploadstylingsbutton').disable();
+		$w('#stylingscounterlabel').text = String(selected_stylings_main.length) + " styling(s) selected. You need a minimum of " + String(threshold_styling_select) + " stylings to be chosen for building the range."
+	}
+
+}
+
+// 2.4 Function that appends image names to main array for calling API
+// -------------------------------------------------------------------
+export function stylingcheckbox_change(event, $w) {
+
+	// Seems to get current item selector
+	// ----------------------------------
+	let $curritem = $w.at(event.context);
+	var curr_item_vale = $curritem("#stylingcheckbox").value;
+	var curr_item_index = selected_stylings_main.indexOf(curr_item_vale);
+	var countertext
+
+	if ($curritem("#stylingcheckbox").checked === true) {
+
+		if (curr_item_index < 0) {
+
+			// Push current value to main array
+			// --------------------------------
+			selected_stylings_main.push(curr_item_vale);
+		}
+	} else {
+
+		if (curr_item_index >= 0) {
+
+			// Remove current value from main array
+			// ------------------------------------
+			selected_stylings_main.splice(curr_item_index, 1);
+
+		}
+
+	}
+
+	// Enabling/disabling upload theme button
+	// --------------------------------------
+	if (selected_stylings_main.length >= threshold_styling_select) {
+
+		// Enable upload button
+		// --------------------
+		$w('#uploadstylingsbutton').expand();
+		$w('#uploadstylingsbutton').enable();
+		countertext = "( " + String(selected_stylings_main.length) + " styling(s) selected. You can now submit your stylings. )"; 
+
+		
+
+	} else {
+		// Disable upload button
+		// --------------------
+		$w('#uploadstylingsbutton').disable();
+		countertext = String(selected_stylings_main.length) + " styling(s) selected. You need a minimum of " + String(threshold_styling_select) + " stylings to be chosen for building the range."
+	}
+
+	// Setting countertext label text
+	// ------------------------------
+	$w('#stylingscounterlabel').text = countertext
+	$w('#floatingbox').show()
+	$w('#floatingcounterlabel').text =  String(selected_stylings_main.length) + " styling(s) selected. " + String(threshold_styling_select) + " minumium required."
+
+}
+
+// 2.5 Triggers ven API for styling preparation
+// --------------------------------------------- 
+export async function uploadstylingsbutton_click(event) {
+
+	// 1. Trigerring prepare patterns
+	// ------------------------------
+	$w('#floatingbox').hide()
+	$w('#uploadstylingsbutton').disable();
+	$w('#uploadstylingsbutton').label = "Working.."
+
+	let url_reponse = await prepareconfirmedstylings(main_user_id, main_task_id, getcorrectstring(selected_stylings_main));
+
+	if (url_reponse === "Thread started") {
+
+		// Just reload the page
+		// --------------------
+		let baseUrl = wixLocation.baseUrl;
+		await wixLocation.to(main_base_url + "/apitest/userinput?task_id=" + main_task_id);
+		
+
+	} else {
+
+		// code
+		$w('#uploadstylingsbutton').enable();
+		$w('#uploadstylingsbutton').label = "Done"
+		$w('#stylingscounterlabel').text = "Oops an error. " + String(url_reponse)
+
+	}
+
+}
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// 3. PICK PATTERNS FUNCTIONS
+
+// 3.1 A function that will just load the repeater with patterns
+// -------------------------------------------------------------
+export async function load_all_patterns(user_id, task_id) {
+
+	// Some sanity clean ups
+	// ---------------------
+	$w('#pickedpatternscounterlabel').text = "Loading patterns..";
+	$w('#allpatternsrepeater').collapse();
+	$w('#allpatternsrepeater').data = [];
+	$w('#createtexturesbutton').disable();
+
+	var items = [];
+
+	// Calling API to get urls JSON
+	// ----------------------------
+	var pattern_urls = await getallpatternsurl(main_user_id, main_task_id);
+
+	// Itering through the top level keys and setting items array to use
+	// -----------------------------------------------------------------
+	for (var key in pattern_urls) {
+		//items.push({ "src": line_urls[key]["img_url"], "description": line_urls[key]["img_name"], "title": line_urls[key]["img_name"] });
+		items.push({ "src": pattern_urls[key]["p_url"], "pattern_index": pattern_urls[key]["index"], "_id": key });
+	}
+
+	// Setting repeater data
+	// ---------------------
+	$w('#allpatternsrepeater').onItemReady(($item, itemData, index) => {
+		$item("#patternimage").src = itemData.src;
+		$item("#selectpatternchkbox").value = itemData.pattern_index;
+
+	});
+
+	// Enabling repeater
+	// -----------------
+	$w('#pickedpatternscounterlabel').text = "Loading patterns..";
+	$w('#allpatternsrepeater').data = items;
+	await $w('#allpatternsrepeater').expand();
+	$w('#pickedpatternscounterlabel').text = String(items.length) + " patterns loaded. Start picking!";
+
+}
+
+// 3.2 Check patterns check box action on change
+// ---------------------------------------------
+export function selectpatternchkbox_change(event) {
+
+	// Seems to get current item selector
+	// ----------------------------------
+	let $curritem = $w.at(event.context);
+	var curr_item_vale = $curritem("#selectpatternchkbox").value;
+	var curr_item_index = selected_patterns_main.indexOf(curr_item_vale);
+	var countertext;
+
+	if ($curritem("#selectpatternchkbox").checked === true) {
+
+		if (curr_item_index < 0) {
+
+			// Push current value to main array
+			// --------------------------------
+			selected_patterns_main.push(curr_item_vale);
+		}
+	} else {
+
+		if (curr_item_index >= 0) {
+
+			// Remove current value from main array
+			// ------------------------------------
+			selected_patterns_main.splice(curr_item_index, 1);
+
+		}
+
+	}
+
+	// Enabling/disabling upload theme button
+	// --------------------------------------
+	if (selected_patterns_main.length >= threshold_pattern_select) {
+
+		// Enable create texture button
+		// ----------------------------
+		$w('#createtexturesbutton').enable();
+		countertext = "( " + String(selected_patterns_main.length) + " patterns(s) selected. You can now submit your selections. )"
+
+	} else {
+		// Disable upload button
+		// --------------------
+		$w('#createtexturesbutton').disable();
+		countertext = String(selected_patterns_main.length) + " patterns(s) selected. You need a minimum of " + String(threshold_pattern_select) + " patterns to be chosen for building the range."
+	}
+
+	// Setting countertext label text
+	// ------------------------------
+	$w('#pickedpatternscounterlabel').text = countertext
+	$w('#floatingbox').show()
+	$w('#floatingcounterlabel').text =  String(selected_patterns_main.length) + " pattern(s) selected. " + String(threshold_pattern_select) + " minumium required."
+
+}
+
+// 3.3 Main function that submits pattern selection
+// ------------------------------------------------
+export async function createtexturesbutton_click(event) {
+
+	// 1. Trigerring create textures API
+	// ---------------------------------
+	$w('#createtexturesbutton').disable();
+	$w('#createtexturesbutton').label = "Working.."
+
+	let url_reponse = await createtexturesforselection(main_user_id, main_task_id, getcorrectstring(selected_patterns_main));
+
+	if (url_reponse === "Thread started") {
+		
+		// Just reload the page
+		// --------------------
+		let baseUrl = wixLocation.baseUrl;
+		await wixLocation.to(main_base_url + "/apitest/userinput?task_id=" + main_task_id);
+
+
+	}
+	else {
+		// code
+		$w('#createtexturesbutton').enable();
+		$w('#createtexturesbutton').label = "Done"
+		$w('#pickedpatternscounterlabel').text = "Oops an error. " + String(url_reponse)
+
+	}
+
+}
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// 4. RANGE BOARD FUNCTIONS
+
+// 4.1 Checking validity of rangeboard name input
+// -----------------------------------------------
+export function rangeboardname_keyPress(event) {
+	//Add your code for this event here: 
+
+	// Checking validity
+	// -----------------
+	if ($w('#rangeboardname').value !== "" && $w('#rangeboardstylingprefix').value !== "") {
+
+		$w('#generateideasbutton').enable()
+	} else {
+
+		$w('#generateideasbutton').disable()
+	}
+}
+
+// 4.2 Checking validity of rangeboard styling prefix input
+// --------------------------------------------------------
+export function rangeboardstylingprefix_keyPress(event) {
+	//Add your code for this event here: 
+
+	// Checking validity
+	// -----------------
+	if ($w('#rangeboardname').value !== "" && $w('#rangeboardstylingprefix').value !== "") {
+
+		$w('#generateideasbutton').enable()
+	} else {
+
+		$w('#generateideasbutton').disable()
+	}
+}
+
+// 4.3 Generate Range even
+// -----------------------
+export async function generateideasbutton_click(event) {
+
+	// Calling generate ideas API
+	// --------------------------
+	// 1. Trigerring create textures API
+	// ---------------------------------
+	$w("#generateideasinfo").hide();
+	$w('#downloadrangepdf').hide();
+	$w('#dowloadpdfurllabel').hide();
+	$w('#generateideasbutton').disable();
+	$w('#generateideasbutton').label = "Working.."
+
+	// Setting MAIN TASK ID here
+	// -------------------------
+	var t_date = new Date();
+	var t_time = t_date.getTime();
+	main_gen_id = "GEN" + String(t_time);
+
+	var range_name = $w("#rangeboardname").value;
+	var styling_prefix = $w("#rangeboardstylingprefix").value;
+	var no_options = 5;
+
+	// (user_id, task_id, gen_id, board_name, styling_prefix, no_options) {
+
+	let url_reponse = await generateideasforuser(main_user_id, main_task_id, main_gen_id, range_name, styling_prefix, no_options);
+
+	if (url_reponse === "Thread started") {
+		
+		// Refresh items in box
+		// ---------------------
+		$w("#generateideasinfo").show();
+		$w("#generateideasinfo").text = "Done. Go on and generate again if you want! Gen ID: " + main_gen_id
+		$w('#generateideasbutton').enable();
+		$w('#generateideasbutton').label = "Build Range";
+
+		// Enabling download pdf button
+		// ---------------------------
+		$w('#downloadrangepdf').show();
+		$w('#downloadrangepdf').enable();
+
+	}
+	else {
+
+		// Refresh items in box
+		// ---------------------
+		$w("#generateideasinfo").show();
+		$w("#generateideasinfo").text = "Error. Something went wrong. " + String(url_reponse) + " Gen ID: " + main_gen_id
+	
+
+	}
+}
+
+// 4.5 A function that checks PDF availibility
+// -------------------------------------------
+export async function downloadrangepdf_click(event) {
+	//Add your code for this event here: 
+
+	// Setting Download PDF Button
+	// ----------------------------
+	$w('#dowloadpdfurllabel').show();
+	$w('#dowloadpdfurllabel').text = "";
+	$w("#downloadrangepdf").disable();
+	$w("#downloadrangepdf").label = "Working..";
+
+	var pdf_url = await getrangepdfurl(main_user_id, main_task_id, main_gen_id);
+	$w('#dowloadpdfurllabel').show();
+
+	$w("#downloadrangepdf").enable();
+	$w("#downloadrangepdf").label = "Check PDF";
+
+	if (String(pdf_url) === "Invalid URL") {
+		$w('#dowloadpdfurllabel').text = "Range PDF not available yet. Check again in a few seconds.";
+	}
+	else{
+		$w('#dowloadpdfurllabel').text = String(pdf_url)
+	}
+
+
+}
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// 5. AI INITIALISED FUNCTIONS
+
+// 5.1 Function to refresh page from AI initialised box
+// ----------------------------------------------------
+export async function followprogressbutton_click(event) {
+	//Add your code for this event here: 
+
+	// Using a redirect so that task_id gets embedded in the URL
+	// ---------------------------------------------------------
+	let baseUrl = wixLocation.baseUrl;
+	await wixLocation.to(main_base_url + "/apitest/userinput?task_id=" + main_task_id);
+}
