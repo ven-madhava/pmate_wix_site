@@ -405,7 +405,7 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		$w('#loadingwaitbox').collapse();
 
 		// END OF DISPLAY SETTINGS -----------------------------------------------
-		$w('#alerttext').text += "On setting displat page all less than 0 --- " + " :: user_id: " + main_user_id + ", taskid :: " + main_task_id 
+		$w('#alerttext').text += "On setting display page all less than 0 --- " + " :: user_id: " + main_user_id + ", taskid :: " + main_task_id 
 
 	}
 
@@ -414,7 +414,7 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		// Page loaded for user id but with invalid TASK ID - reloading page
 		// -----------------------------------------------------------------
 		let baseUrl = wixLocation.baseUrl;
-		await wixLocation.to(main_base_url + "/apitest/userinput")
+		await wixLocation.to(main_base_url + "/apitest/build-range")
 		$w('#alerttext').text += "On setting displat page redirect else" + " :: user_id: " + main_user_id + ", taskid :: " + main_task_id 
 
 	}
@@ -427,9 +427,8 @@ $w.onReady(async function () {
 
 	// Setting display to loading
 	// --------------------------
-	//setdisplay(-1000,1000,200); // doesnt seem to have an impact but let me just have it anyway
-	
 	$w('#alerttext').text = ""
+	$w('#loadingwaitbox').expand();
 
 	// 1. Get the userid -- this page is always visible only after a user is logged in
 	// -------------------------------------------------------------------------------
@@ -650,6 +649,10 @@ export async function pickstylingsbutton_click(event) {
 				// ---------------------
 				$w('#generateideasbox').collapse();
 				// more to come
+				
+				// 6. Collapsing 
+				// -------------
+				$w('#loadingwaitbox').collapse();
 
 				// END OF DISPLAY SETTINGS -----------------------------------------------
 
@@ -867,7 +870,7 @@ export async function uploadstylingsbutton_click(event) {
 				// Just reload the page
 				// --------------------
 				let baseUrl = wixLocation.baseUrl;
-				await wixLocation.to(main_base_url + "/apitest/userinput?task_id=" + main_task_id);
+				await wixLocation.to(main_base_url + "/apitest/build-range?task_id=" + main_task_id);
 				
 
 			} else {
@@ -1001,7 +1004,7 @@ export async function createtexturesbutton_click(event) {
 				// Just reload the page
 				// --------------------
 				let baseUrl = wixLocation.baseUrl;
-				wixLocation.to(main_base_url + "/apitest/userinput?task_id=" + main_task_id);
+				wixLocation.to(main_base_url + "/apitest/build-range?task_id=" + main_task_id);
 			}
 			else {
 				// code
@@ -1141,5 +1144,5 @@ export async function followprogressbutton_click(event) {
 	// Using a redirect so that task_id gets embedded in the URL
 	// ---------------------------------------------------------
 	let baseUrl = wixLocation.baseUrl;
-	await wixLocation.to(main_base_url + "/apitest/userinput?task_id=" + main_task_id);
+	await wixLocation.to(main_base_url + "/apitest/build-range?task_id=" + main_task_id);
 }
