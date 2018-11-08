@@ -67,7 +67,6 @@ export function getallstylingsurl(cat_in_id) {
 
 }
 
-
 // Function to get trigger new patterns
 // ------------------------------------
 export function createnewpatterns(user_id, task_id) {
@@ -163,11 +162,11 @@ export function savewiximagetogcs(user_id, task_id, wix_url) {
 
 }
 
-// Function to get rangeboard PDF
-// -------------------------------
-export function getrangepdf(user_id, task_id, gen_id) {
+// Function to get rangeboard PDF URL
+// -----------------------------------
+export function getrangepdfurl(user_id, task_id, gen_id) {
 
-	const api_name = "getrange"
+	const api_name = "getrangepdfurl"
 	const url = baseURL + api_name + "?api_key=" + api_key;
 	const headers_in = { "Content-Type": "application/json" };
 	const json_query = { "user_id": user_id, "task_id": task_id, "gen_id": gen_id };
@@ -182,14 +181,52 @@ export function getrangepdf(user_id, task_id, gen_id) {
 
 }
 
-// Function to get rangeboard PDF URL
-// -----------------------------------
-export function getrangepdfurl(user_id, task_id, gen_id) {
+// Function to get themes URL
+// --------------------------
+export function getthemesurl(user_id, task_id) {
 
-	const api_name = "getrangepdfurl"
+	const api_name = "getthemesurl"
 	const url = baseURL + api_name + "?api_key=" + api_key;
 	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id": user_id, "task_id": task_id, "gen_id": gen_id };
+	const json_query = { "user_id": user_id, "task_id": task_id};
+	const request_in = {
+		method: "POST",
+		headers: headers_in,
+		body: JSON.stringify(json_query)
+	};
+
+	return fetch(url, request_in)
+		.then(response => response.json())
+
+}
+
+// Function to get taskids
+// --------------------------
+export function gettaskids(user_id) {
+
+	const api_name = "gettaskids"
+	const url = baseURL + api_name + "?api_key=" + api_key;
+	const headers_in = { "Content-Type": "application/json" };
+	const json_query = { "user_id": user_id};
+	const request_in = {
+		method: "POST",
+		headers: headers_in,
+		body: JSON.stringify(json_query)
+	};
+
+	return fetch(url, request_in)
+		.then(response => response.json())
+
+}
+
+// Function to get ALL rangeboard PDF URL
+// --------------------------
+export function getallrangeboardsurl(user_id, task_id) {
+
+	const api_name = "getallrangeboardsurls"
+	const url = baseURL + api_name + "?api_key=" + api_key;
+	const headers_in = { "Content-Type": "application/json" };
+	const json_query = { "user_id": user_id, "task_id": task_id };
 	const request_in = {
 		method: "POST",
 		headers: headers_in,
