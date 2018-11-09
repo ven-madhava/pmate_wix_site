@@ -2,7 +2,7 @@
 
 // imports
 // -------
-import { getrangepdf, getrangepdfurl, gettaskstatus, getallpatternsurl, getallstylingsurl, savewiximagetogcs, createnewpatterns, prepareconfirmedstylings, createtexturesforselection, generateideasforuser } from 'backend/aModule';
+import { getprogress, getrangepdf, getrangepdfurl, gettaskstatus, getallpatternsurl, getallstylingsurl, savewiximagetogcs, createnewpatterns, prepareconfirmedstylings, createtexturesforselection, generateideasforuser } from 'backend/aModule';
 import { dep_values, cat_values_girls, cat_values_boys, cat_values_women, cat_values_men, threshold_styling_select, max_themes_upload, min_themes_upload, main_base_url, threshold_pattern_select } from 'public/public_initials.js';
 import wixUsers from 'wix-users';
 import wixLocation from 'wix-location';
@@ -17,6 +17,7 @@ var main_gen_id;
 var thumbnail_local_urls = [];
 var to_be_uploaded_local_urls = [];
 var selected_patterns_main = [];
+var progresstimerid;
 
 // 0.1 Function to convert array to comma string for API
 // -----------------------------------------------------
@@ -150,6 +151,10 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		$w('#aiinitialisedbox').expand();
 		$w('#aiinitialisedheader').text = "AI Initialised"
 		$w('#aiinitialisedpara').text = "Our AI is learning features from your inspiration images & stylings. Give it a while and then you can pick the patterns you like to start creating your range.";
+		// Calling progress function
+		// -------------------------
+		progresstimerid = setInterval(getprogressupdate, 2000, main_user_id, main_task_id);
+		
 
 		// 5. Generate ideas box
 		// ---------------------
@@ -268,7 +273,11 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		$w('#aiinitialisedbox').expand();
 		$w('#aiinitialisedheader').text = "All Done. Hang in there while our AI completes"
 		$w('#aiinitialisedpara').text = "Your side of inputs is now done. Our AI is progressing through your inputs. Give it a few minutes and you can start generate your range. Follow progress of your task below.";
+		// Calling progress function
+		// -------------------------
+		progresstimerid = setInterval(getprogressupdate, 2000, main_user_id, main_task_id);
 
+		
 		// 5. Generate ideas box
 		// ---------------------
 		$w('#generateideasbox').collapse();
@@ -414,7 +423,7 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		// Page loaded for user id but with invalid TASK ID - reloading page
 		// -----------------------------------------------------------------
 		let baseUrl = wixLocation.baseUrl;
-		await wixLocation.to(main_base_url + "/apitest/build-range")
+		await wixLocation.to(main_base_url + "/build-range")
 		$w('#alerttext').text += "On setting displat page redirect else" + " :: user_id: " + main_user_id + ", taskid :: " + main_task_id 
 
 	}
@@ -870,7 +879,7 @@ export async function uploadstylingsbutton_click(event) {
 				// Just reload the page
 				// --------------------
 				let baseUrl = wixLocation.baseUrl;
-				await wixLocation.to(main_base_url + "/apitest/build-range?task_id=" + main_task_id);
+				await wixLocation.to(main_base_url + "/build-range?task_id=" + main_task_id);
 				
 
 			} else {
@@ -926,9 +935,22 @@ export async function load_all_patterns(user_id, task_id) {
 	// Enabling repeater
 	// -----------------
 	$w('#pickedpatternscounterlabel').text = "Loading patterns..";
+	$w('#loadingwaitbox').expand();
 	$w('#allpatternsrepeater').data = items;
 	$w('#allpatternsrepeater').expand();
 	$w('#pickedpatternscounterlabel').text = String(items.length) + " patterns loaded. Start picking!";
+
+	// Using setouttime to show loading
+	// --------------------------------
+	var settimeouttimer;
+	if (items.length < 200) {
+		settimeouttimer = 5000;
+	} else if (items.length >= 200 && items.length < 500 ) {
+		settimeouttimer = 10000;
+	} else {
+		settimeouttimer = 15000;
+	}
+	setTimeout(()=>{$w('#loadingwaitbox').collapse();},settimeouttimer);
 
 }
 
@@ -1004,7 +1026,7 @@ export async function createtexturesbutton_click(event) {
 				// Just reload the page
 				// --------------------
 				let baseUrl = wixLocation.baseUrl;
-				wixLocation.to(main_base_url + "/apitest/build-range?task_id=" + main_task_id);
+				wixLocation.to(main_base_url + "/build-range?task_id=" + main_task_id);
 			}
 			else {
 				// code
@@ -1144,5 +1166,131 @@ export async function followprogressbutton_click(event) {
 	// Using a redirect so that task_id gets embedded in the URL
 	// ---------------------------------------------------------
 	let baseUrl = wixLocation.baseUrl;
-	await wixLocation.to(main_base_url + "/apitest/build-range?task_id=" + main_task_id);
+	await wixLocation.to(main_base_url + "/build-range?task_id=" + main_task_id);
+}
+
+// 5.2 Function that sets progress status updates
+// ----------------------------------------------
+export async function getprogressupdate(user_id, task_id){
+
+	// Initialisations
+	// ---------------
+	var items = [];
+	//$w('#progressstatusrepeater').data = [];
+
+	// 1. First is to get get task status for the task and then get progress and add repeater items
+	// ---------------------------------------------------------------------------------------------
+	var currtask = await gettaskstatus(user_id, task_id);
+	
+	// 1. Master check to see if any process is underway
+	// -------------------------------------------------
+	if (currtask["new_patterns"] ===  1 || currtask["prepare_stylings"] === 1 || currtask["create_textures"] === 1) {
+
+		// 1. Checking if newpatterns build underway
+		// -----------------------------------------
+		if (currtask["new_patterns"] === 1) {
+
+			var curr_progress_np = await getprogress(task_id, 1);
+			var curr_time_left_np;
+			if (curr_progress_np["curr_process_time_remaining"] === "ETA Not Available") {
+
+				curr_time_left_np = "Working.. please wait";
+
+			} else {
+				
+				curr_time_left_np = curr_progress_np["curr_process_time_remaining"];
+
+			}
+			items.push({
+				"_id":task_id + "1",
+				"progress_for": "Processing Uploaded Inspirations",
+				"curr_step": curr_progress_np["curr_step"] + 1,
+				"total_step": curr_progress_np["total_step"] + 1,
+				"curr_message":curr_progress_np["curr_message"],
+				"curr_time_left": curr_time_left_np
+				})
+			
+		}
+		// 2. Checking if styling preparations underway
+		// --------------------------------------------
+		if (currtask["prepare_stylings"] === 1) {
+
+			var curr_progress_ps = await getprogress(task_id, 2);
+			var curr_time_left_ps;
+			if (curr_progress_ps["curr_process_time_remaining"] === "ETA Not Available") {
+
+				curr_time_left_ps = "Working.. please wait";
+
+			} else {
+				
+				curr_time_left_ps = curr_progress_ps["curr_process_time_remaining"];
+
+			}
+			items.push({
+				"_id":task_id + "2",
+				"progress_for": "Processing Selected Stylings",
+				"curr_step": curr_progress_ps["curr_step"] + 1,
+				"total_step": curr_progress_ps["total_step"] + 1,
+				"curr_message":curr_progress_ps["curr_message"],
+				"curr_time_left": curr_time_left_ps
+				})
+		}
+		// 3. Checking if create textures underway
+		// ---------------------------------------
+		if (currtask["create_textures"] === 1) {
+
+			var curr_progress_ct = await getprogress(task_id, 3);
+			var curr_time_left_ct;
+			if (curr_progress_ct["curr_process_time_remaining"] === "ETA Not Available") {
+
+				curr_time_left_ct = "Working.. please wait";
+
+			} else {
+				
+				curr_time_left_ct = curr_progress_ct["curr_process_time_remaining"];
+
+			}
+			items.push({
+				"_id":task_id + "3",
+				"progress_for": "Processing Selected Patterns",
+				"curr_step": curr_progress_ct["curr_step"] + 1,
+				"total_step": curr_progress_ct["total_step"] + 1,
+				"curr_message":curr_progress_ct["curr_message"],
+				"curr_time_left": curr_time_left_ct
+				})
+		}
+
+		// Setting repeater data
+		// ---------------------
+		$w('#progressstatusrepeater').onItemReady(($item, itemData, index) => {
+			$item("#progressstatusheader").text = itemData.progress_for;
+			$item("#progresscurrmessagetext").text = itemData.curr_message;
+			$item("#progressstatussummary").text = itemData.curr_step + " out of " + itemData.total_step + " steps complete"
+			$item("#timertext").text = itemData.curr_time_left;
+		});
+
+		$w('#progressstatusrepeater').data = items;
+		$w('#progressstatusrepeater').expand();
+
+
+	} else {
+
+		// code to collapes progressbox
+		// ----------------------------
+		clearInterval(progresstimerid);
+		$w('#progressstatusrepeater').collapse();
+		// Using a redirect so that task_id gets embedded in the URL
+		// ---------------------------------------------------------
+		let baseUrl = wixLocation.baseUrl;
+		await wixLocation.to(main_base_url + "/build-range?task_id=" + main_task_id);
+		
+
+	}
+	
+
+
+
+
+	
+
 }
