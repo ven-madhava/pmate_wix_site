@@ -1,263 +1,77 @@
-// Filename: backend/aModule.jsw (web modules need to have a .jsw extension)
+// Filename: public/public_initials.js 
+//
+// Code written in public files is shared by your site's
+// Backend, page code, and site code environments.
+//
+// Use public files to hold utility functions that can 
+// be called from multiple locations in your site's code.
 
-// Imports
-// -------
-import { fetch } from 'wix-fetch';
-
-// Project initialisations
-// -----------------------
-const baseURL = 'http://35.194.20.102:8000/';
-const api_key = 'k1ocCDmw7N2rG4qQdyEtVhHX9';
-export let main_task_id = 'PMTASK04';
-
-// Function to get taskstatus
-// --------------------------
-export function gettaskstatus(user_id, task_id) {
-
-	const api_name = "gettaskstatus"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id": user_id, "task_id": task_id };
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
+export function add(param1, param2) {
+	return param1 + param2;
 }
 
-// Function to get all patterns URL
+// Main variable that holds task_id
 // --------------------------------
-export function getallpatternsurl(user_id, task_id) {
+export var threshold_styling_select = 10;
+export var threshold_pattern_select = 25;
+export var max_themes_upload = 10;
+export var min_themes_upload = 5;
+export var main_base_url = "https://www.protomate.co"
+export var main_user_id;
 
-	const api_name = "getallpatternsurl"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id":user_id, "task_id": task_id };
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
-}
-
-// Function to get all stylings URL
-// --------------------------------
-export function getallstylingsurl(cat_in_id) {
-
-	const api_name = "getallstylingsurl"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "cat_id": cat_in_id };
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
-}
-
-// Function to get trigger new patterns
+// Department and their category values
 // ------------------------------------
-export function createnewpatterns(user_id, task_id) {
+export const dep_values = [
+{value:"GL", label: "Girls"},
+{value:"BY", label: "Boys"},
+{value:"WM", label: "Women"},
+{value:"MN", label: "Men"}
+];
+export const cat_values_girls = [
+{value:"0", label: "Woven Dresses"},
+{value:"2", label: "Woven Tops"},
+{value:"7", label: "Woven Pants"}
+];
+export const cat_values_boys = [
+{value:"13", label: "Polos"},
+{value:"14", label: "Woven Shirts"},
+{value:"16", label: "Woven Pants"}
+];
+export const cat_values_women = [
+{value:"20", label: "Woven Dresses"},
+{value:"22", label: "Woven Tops"},
+{value:"27", label: "Woven Pants"}
+];
+export const cat_values_men = [
+{value:"33", label: "Polos"},
+{value:"34", label: "Woven Shirts"},
+{value:"36", label: "Woven Pants"}
+];
 
-	const api_name = "newpatterns"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id": user_id, "task_id": task_id };
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
 
-	return fetch(url, request_in)
-		.then(response => response.json())
 
+
+
+// The following code demonstrates how to call the add
+// function from your site's page code or site code.
+
+/* 
+import {add} from 'public/public_initials.js'
+
+$w.onReady(function () {	
+    let sum = add(6,7);
+    console.log(sum);
+});
+*/
+
+
+//The following code demonstrates how to call the add 
+//function in one of your site's backend files.
+
+/* 
+import {add} from 'public/public_initials.js'
+
+export function usingFunctionFromPublic(a, b) {
+	return add(a,b);
 }
-
-// Function to get trigger prepare stylings
-// ----------------------------------------
-export function prepareconfirmedstylings(user_id, task_id, picked_stylings) {
-
-	const api_name = "preparestylings"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id": user_id, "task_id": task_id, "picked_ind_string":picked_stylings };
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
-}
-
-// Function to get create textures
-// -------------------------------
-export function createtexturesforselection(user_id, task_id, picked_patterns_indices) {
-
-	const api_name = "createtextures"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id": user_id, "task_id": task_id, "picked_ind_string":picked_patterns_indices };
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
-}
-
-// Function to generate ideas
-// --------------------------
-export function generateideasforuser(user_id, task_id, gen_id, board_name, styling_prefix, no_options) {
-
-	const api_name = "generateideas"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id": user_id, "task_id": task_id, "gen_id":gen_id, "task_board_name":board_name, "task_styling_name_prefix":styling_prefix, "no_options":no_options };
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
-}
-
-// Function to get save wix URL
-// ----------------------------
-export function savewiximagetogcs(user_id, task_id, wix_url) {
-
-	const api_name = "saveimagefromwixurl"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id": user_id, "task_id": task_id, "wix_url": wix_url };
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
-}
-
-// Function to get rangeboard PDF URL
-// -----------------------------------
-export function getrangepdfurl(user_id, task_id, gen_id) {
-
-	const api_name = "getrangepdfurl"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id": user_id, "task_id": task_id, "gen_id": gen_id };
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
-}
-
-// Function to get themes URL
-// --------------------------
-export function getthemesurl(user_id, task_id) {
-
-	const api_name = "getthemesurl"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id": user_id, "task_id": task_id};
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
-}
-
-// Function to get taskids
-// --------------------------
-export function gettaskids(user_id) {
-
-	const api_name = "gettaskids"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id": user_id};
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
-}
-
-// Function to get ALL rangeboard PDF URL
-// --------------------------
-export function getallrangeboardsurl(user_id, task_id) {
-
-	const api_name = "getallrangeboardsurls"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "user_id": user_id, "task_id": task_id };
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
-}
-
-// Function to return progress
-// ---------------------------
-export function getprogress(task_id,prog_id) {
-
-	const api_name = "getprogress"
-	const url = baseURL + api_name + "?api_key=" + api_key;
-	const headers_in = { "Content-Type": "application/json" };
-	const json_query = { "task_id": task_id , "prog_id": prog_id };
-	const request_in = {
-		method: "POST",
-		headers: headers_in,
-		body: JSON.stringify(json_query)
-	};
-
-	return fetch(url, request_in)
-		.then(response => response.json())
-
-}
-
-
-
-//Use the following code in one of your site's front-end files
-//to call the multiply function from backend/aModule.jsw.
+*/
