@@ -18,6 +18,8 @@ var thumbnail_local_urls = [];
 var to_be_uploaded_local_urls = [];
 var selected_patterns_main = [];
 var progresstimerid;
+var gentimerid;
+var patternsselectedcounter = 0;
 
 // 0.1 Function to convert array to comma string for API
 // -----------------------------------------------------
@@ -1007,6 +1009,7 @@ export function selectpatternchkbox_change(event) {
 	$w('#floatingbox').show()
 	$w('#floatingcounterlabel').text =  String(selected_patterns_main.length) + " pattern(s) selected. " + String(threshold_pattern_select) + " minumium required."
 
+
 }
 
 // 3.3 Main function that submits pattern selection
@@ -1083,8 +1086,7 @@ export async function generateideasbutton_click(event) {
 	// 1. Trigerring create textures API
 	// ---------------------------------
 	$w("#generateideasinfo").hide();
-	$w('#downloadrangepdf').hide();
-	$w('#dowloadpdfurllabel').hide();
+	$w('#downloadrangepdf').collapse();
 	$w('#generateideasbutton').disable();
 	$w('#generateideasbutton').label = "Working.."
 
@@ -1098,8 +1100,6 @@ export async function generateideasbutton_click(event) {
 	var styling_prefix = $w("#rangeboardstylingprefix").value;
 	var no_options = 5;
 
-	// (user_id, task_id, gen_id, board_name, styling_prefix, no_options) {
-
 	//let url_reponse = await 
 	generateideasforuser(main_user_id, main_task_id, main_gen_id, range_name, styling_prefix, no_options)
 		.then( function(url_response) {
@@ -1111,10 +1111,10 @@ export async function generateideasbutton_click(event) {
 				$w('#generateideasbutton').enable();
 				$w('#generateideasbutton').label = "Build Range";
 
-				// Enabling download pdf button
-				// ---------------------------
-				$w('#downloadrangepdf').show();
-				$w('#downloadrangepdf').enable();
+				// Polling for PDF check
+				// ---------------------
+				
+				gentimerid = setInterval(checkrangeavailable, 2000);
 			}
 			else {
 				// Refresh items in box
@@ -1127,49 +1127,43 @@ export async function generateideasbutton_click(event) {
 	
 }
 
-// 4.5 A function that checks PDF availibility
-// -------------------------------------------
-export async function downloadrangepdf_click(event) {
+
+// 4.5 A function that will check for rangeboard pdf
+// -------------------------------------------------
+export async function checkrangeavailable() {
 	//Add your code for this event here: 
 
 	// Setting Download PDF Button
 	// ----------------------------
-	$w('#dowloadpdfurllabel').show();
-	$w('#dowloadpdfurllabel').text = "";
 	$w("#downloadrangepdf").disable();
-	$w("#downloadrangepdf").label = "Working..";
+	$w("#downloadrangepdf").label = "Fetching your range..";
 
 	var pdf_url = await getrangepdfurl(main_user_id, main_task_id, main_gen_id);
-	$w('#dowloadpdfurllabel').show();
-
-	$w("#downloadrangepdf").enable();
-	$w("#downloadrangepdf").label = "Check PDF";
 
 	if (String(pdf_url) === "Invalid URL") {
-		$w('#dowloadpdfurllabel').text = "Range PDF not available yet. Check again in a few seconds.";
+		// Do nothing
 	}
 	else{
-		$w('#dowloadpdfurllabel').text = String(pdf_url)
+
+		$w("#downloadrangepdf").label = "Download PDF";
+		$w("#downloadrangepdf").link =  String(pdf_url);
+		$w("#downloadrangepdf").enable();
+		clearInterval(gentimerid);
+	
 	}
 
 
 }
+
+
+// 4.6 A polling function that sets the link for pdf once its got
+// --------------------------------------------------------------
+
 
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 // 5. AI INITIALISED FUNCTIONS
 
-// 5.1 Function to refresh page from AI initialised box
-// ----------------------------------------------------
-export async function followprogressbutton_click(event) {
-	//Add your code for this event here: 
-
-	// Using a redirect so that task_id gets embedded in the URL
-	// ---------------------------------------------------------
-	let baseUrl = wixLocation.baseUrl;
-	await wixLocation.to(main_base_url + "/build-range?task_id=" + main_task_id);
-}
-
-// 5.2 Function that sets progress status updates
+// 5.1 Function that sets progress status updates
 // ----------------------------------------------
 export async function getprogressupdate(user_id, task_id){
 
@@ -1294,3 +1288,4 @@ export async function getprogressupdate(user_id, task_id){
 	
 
 }
+
