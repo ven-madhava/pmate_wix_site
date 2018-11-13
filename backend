@@ -258,6 +258,26 @@ export function getprogress(task_id,prog_id) {
 }
 
 
+// Function to get taskfile boards URL
+// -----------------------------------
+export function gettaskfileboardurl(user_id, task_id) {
+
+	const api_name = "gettaskfilesboardurl"
+	const url = baseURL + api_name + "?api_key=" + api_key;
+	const headers_in = { "Content-Type": "application/json" };
+	const json_query = { "user_id": user_id, "task_id": task_id };
+	const request_in = {
+		method: "POST",
+		headers: headers_in,
+		body: JSON.stringify(json_query)
+	};
+
+	return fetch(url, request_in)
+		.then(response => response.json())
+
+}
+
+
 
 //Use the following code in one of your site's front-end files
 //to call the multiply function from backend/aModule.jsw.
