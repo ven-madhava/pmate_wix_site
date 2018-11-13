@@ -417,7 +417,6 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		$w('#loadingwaitbox').collapse();
 
 		// END OF DISPLAY SETTINGS -----------------------------------------------
-		$w('#alerttext').text += "On setting display page all less than 0 --- " + " :: user_id: " + main_user_id + ", taskid :: " + main_task_id 
 
 	}
 
@@ -427,7 +426,6 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		// -----------------------------------------------------------------
 		let baseUrl = wixLocation.baseUrl;
 		await wixLocation.to(main_base_url + "/build-range")
-		$w('#alerttext').text += "On setting displat page redirect else" + " :: user_id: " + main_user_id + ", taskid :: " + main_task_id 
 
 	}
 
@@ -439,7 +437,6 @@ $w.onReady(async function () {
 
 	// Setting display to loading
 	// --------------------------
-	$w('#alerttext').text = ""
 	$w('#loadingwaitbox').expand();
 
 	// 1. Get the userid -- this page is always visible only after a user is logged in
@@ -450,7 +447,7 @@ $w.onReady(async function () {
 			// 1. Setting main user ID
 			// -----------------------
 			main_user_id = user;
-			$w('#alerttext').text += "Sucess: Inside user.getemail on $Wload" + " :: user_id: " + main_user_id + ", taskid :: " + main_task_id 
+			
 
 			// 2. Fixed setting displays
 			// ------------------------
@@ -466,7 +463,6 @@ $w.onReady(async function () {
 				// Setting main task id
 				// --------------------
 				main_task_id = urltaskid;
-				$w('#alerttext').text += "hmm 1: Inside then of gettask on $Wload" + " :: user_id: " + main_user_id + ", taskid :: " + main_task_id ;
 
 				// USE TASK STATUS CODE AND SET DISPLAY ACCORDINGLY
 				// ------------------------------------------------
@@ -475,7 +471,6 @@ $w.onReady(async function () {
 						
 						// Calling setdisplay
 						// ------------------
-						$w('#alerttext').text += "Sucess: Inside then of gettask on $Wload" + " :: user_id: " + main_user_id + ", taskid :: " + main_task_id ;
 						setdisplay(url_response["new_patterns"], url_response["prepare_stylings"], url_response["create_textures"]);
 
 					});
@@ -484,7 +479,6 @@ $w.onReady(async function () {
 
 				// Code to call 
 				// ------------
-				$w('#alerttext').text += "Hmm 0: Outside then of gettask on $Wload" + " :: user_id: " + main_user_id + ", taskid :: " + main_task_id 
 				setdisplay(-1, -1, -1)
 
 			}
