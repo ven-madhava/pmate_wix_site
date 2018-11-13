@@ -2,7 +2,7 @@
 
 // imports
 // -------
-import { gettaskfileboardurl, gettaskids, getthemesurl, gettaskstatus, getallrangeboardsurl } from 'backend/aModule';
+import { geteverythingfortaskpage, getallrangeboardsurl } from 'backend/aModule';
 import { main_base_url } from 'public/public_initials.js';
 import wixUsers from 'wix-users';
 import wixLocation from 'wix-location';
@@ -32,42 +32,7 @@ $w.onReady(function () {
 			// 1.1. Setting main user id
 			// -----------------------
 			main_user_id = user;
-			//main_user_id = "sharanya@geospot.in";
-
-			// 1.2. Getting task ids associated with user
-			// -----------------------------------------
-			gettaskids(main_user_id)
-				.then(function (task_ids) {
-
-					// 1.2.1 Set user task ids array to incoming arrays
-					// ------------------------------------------------
-					for (var keys in task_ids) {
-
-						user_task_ids.push(task_ids[keys])
-
-					}
-
-					// 1.2.2 We have the task_ids here - call function to set repeater items
-					// ---------------------------------------------------------------------
-					if (user_task_ids.length > 0) {
-
-						// Setting repeaters
-						// -----------------
-						settaskrepeateritems(user_task_ids);
-
-					} else {
-
-						// Showing create new task box
-						// ---------------------------
-						// Invalid userid / task id
-						// ------------------------
-						$w('#loadingwaitbox').collapse();
-						$w('#mytasktextheaderbox').collapse();
-						$w('#notaskbox').expand();
-
-					}
-
-				});
+			settaskrepeateritemssingeshot(main_user_id);
 
 		});
 
@@ -91,8 +56,8 @@ export function readabletime_taskid(task_id) {
 
 
 // 1. Function to set repeater items
-// ---------------------------------
-export async function settaskrepeateritems(task_ids) {
+// -----------------------------------
+export async function settaskrepeateritemssingeshot(){
 
 	// Some initialisations
 	// --------------------
@@ -100,122 +65,114 @@ export async function settaskrepeateritems(task_ids) {
 	$w('#listtasksrepeater').data = [];
 	var items = [];
 
-	// 1. iterate for each task id and set themes and other content
-	// -----------------------------------------------------------
-	for (var i in task_ids) {
+	var url_reponse = await geteverythingfortaskpage(main_user_id);
 
-		// 1.1 Fullfill themesurl arrays
-		// -----------------------------
-		var curr_themesurls = await getthemesurl(main_user_id, task_ids[i]);
-		themesurl.push(curr_themesurls);
+	if (url_reponse === "NO TASKS FOUND"){
 
-		// 1.2 Getting task status
-		// -----------------------------
-		var currtask = await gettaskstatus(main_user_id, task_ids[i]);
-		taskmessages[i] = returnmasterstatus(currtask["new_patterns"], currtask["prepare_stylings"], currtask["create_textures"]);
+		// No tasks for the user found
+		// --------------------------
+		$w('#loadingwaitbox').collapse();
+		$w('#mytasktextheaderbox').collapse();
+		$w('#notaskbox').expand();
 
-		// 1.3 Getting all rangeboards URL associated with every task as well
-		// ------------------------------------------------------------------
-		var curr_rangeurls = await getallrangeboardsurl(main_user_id, task_ids[i]);
-		rangesurls.push(curr_rangeurls)
+	} else {
 
-		// 1.4 Getting task file board pdf associated with task
-		// ----------------------------------------------------
-		var taskfile_url = await gettaskfileboardurl(main_user_id, task_ids[i]);
-		taskfilesurl.push(taskfile_url)
+		// Some sorting ops
+		// ----------------
+		var sort_keys = [];
+		for (var sort_k in url_reponse) {
 
-		// 
-		//console.log("At Task: " + task_ids[i])
-		//console.log("themes: ")
-		//console.log(themesurl[i])
-		//console.log("messages: ")
-		//console.log(taskmessages[i])
+			sort_keys.push(sort_k);
 
-	}
+		}
+		sort_keys.sort().reverse();
 
-	//console.log("PRINTING ALL -- At Task: " + task_ids[i])
-	//console.log("themes: ")
-	//console.log(themesurl)
-	//console.log("messages: ")
-	//console.log(taskmessages)
+		// Tasks were found and we need to set repeater items
+		// --------------------------------------------------
+		for (var keys in sort_keys){
+			
+			// 1. Getting its taskmessage
+			// --------------------------
+			var taskmessage = returnmasterstatus(url_reponse[sort_keys[keys]]["task_status_new_patterns"], url_reponse[sort_keys[keys]]["task_status_prepare_stylings"], url_reponse[sort_keys[keys]]["task_status_create_textures"]);
 
-	// 2. Pushing items seperately
-	// ---------------------------
-	for (i in task_ids) {
-
-		// 3. Pushing new array to items
-		// -----------------------------
-		items.push({
-			"task_id": task_ids[i],
-			"mast_message": taskmessages[i][0]["master_status"],
-			"_id": task_ids[i],
-			"themes_urls": themesurl[i],
-			"new_pats": taskmessages[i][0]["new_pats"],
-			"prep_stylings": taskmessages[i][0]["prep_styling"],
-			"create_textures": taskmessages[i][0]["create_textures"],
-			"range_urls": rangesurls[i],
-			"button_label": taskmessages[i][0]["button_label"],
-			"button_color": taskmessages[i][0]["button_color"],
-			"taskfile_url": taskfilesurl[i],
-			"created_on": readabletime_taskid(task_ids[i]),
+			items.push({
+			"task_id": sort_keys[keys],
+			"mast_message": taskmessage[0]["master_status"],
+			"_id": sort_keys[keys],
+			"themes_urls": url_reponse[sort_keys[keys]]["themes_url"],
+			"new_pats": taskmessage[0]["new_pats"],
+			"prep_stylings": taskmessage[0]["prep_styling"],
+			"create_textures": taskmessage[0]["create_textures"],
+			"range_urls": url_reponse[sort_keys[keys]]["ranges_url"],
+			"button_label": taskmessage[0]["button_label"],
+			"button_color": taskmessage[0]["button_color"],
+			"taskfile_url": url_reponse[sort_keys[keys]]["taskfiles_url"],
+			"created_on": readabletime_taskid(sort_keys[keys]),
 		});
 
+
+		// 3. We now have items with data that needs to be pushed to repeater
+		// ------------------------------------------------------------------
+		$w('#listtasksrepeater').onItemReady(($item, itemData, index) => {
+			// Setting theme preview images
+			// -----------------------------
+			$item("#image1").src = itemData.themes_urls[1];
+			$item("#image2").src = itemData.themes_urls[2];
+			$item("#image3").src = itemData.themes_urls[3];
+			$item("#image4").src = itemData.themes_urls[4];
+
+			// Setting other content
+			// ---------------------
+			$item("#masterstatuslabel").text = itemData.mast_message;
+			$item("#ttaskidlabel").text = itemData.task_id + ", Created on " + itemData.created_on;
+			$item("#taskidonlylabel").text = itemData.task_id;
+			$item("#themeslabel").text = itemData.new_pats;
+			$item("#stylingslabel").text = itemData.prep_stylings;
+			$item("#swatchedlabel").text = itemData.create_textures;
+			$item("#gototaskbutton").label = itemData.button_label;
+			$item("#gototaskbutton").style.backgroundColor = itemData.button_color;
+		
+			// Button details
+			// --------------
+			$item("#gototaskbutton").link = main_base_url + "/build-range?task_id=" + itemData.task_id;
+
+			// Taskfile button
+			// ---------------
+			if (itemData.taskfile_url === "Invalid URL"){
+				$item("#downloadtaskfiles").disable();
+			} else {
+				$item("#downloadtaskfiles").link = itemData.taskfile_url;
+				$item("#downloadtaskfiles").enable();
+
+			}
+
+			// Range URLS button enabling / disabling
+			// --------------------------------------
+			if (itemData.range_urls === "NO RANGES FOUND"){
+				$item("#showrangeboards").disable();
+			} else {
+				$item("#showrangeboards").enable();
+
+			}
+
+		});
+
+		// 3. Enabling repeater
+		// -------------------
+		$w('#loadingwaitbox').collapse();
+		$w('#mytasktextheaderbox').expand();
+		$w('#listtasksrepeater').data = items;
+		$w('#listtasksrepeater').expand();
+
+
+
+		}
 	}
 
-	// 3. We now have items with data that needs to be pushed to repeater
-	// ------------------------------------------------------------------
-	$w('#listtasksrepeater').onItemReady(($item, itemData, index) => {
-		// Setting theme preview images
-		// -----------------------------
-		$item("#image1").src = itemData.themes_urls[1];
-		$item("#image2").src = itemData.themes_urls[2];
-		$item("#image3").src = itemData.themes_urls[3];
-		$item("#image4").src = itemData.themes_urls[4];
 
-		// Setting other content
-		// ---------------------
-		$item("#masterstatuslabel").text = itemData.mast_message;
-		$item("#ttaskidlabel").text = itemData.task_id + ", Created on " + itemData.created_on;
-		$item("#taskidonlylabel").text = itemData.task_id;
-		$item("#themeslabel").text = itemData.new_pats;
-		$item("#stylingslabel").text = itemData.prep_stylings;
-		$item("#swatchedlabel").text = itemData.create_textures;
-		$item("#gototaskbutton").label = itemData.button_label;
-		$item("#gototaskbutton").style.backgroundColor = itemData.button_color;
-	
-		// Button details
-		// --------------
-		$item("#gototaskbutton").link = main_base_url + "/build-range?task_id=" + itemData.task_id;
-
-		// Taskfile button
-		// ---------------
-		if (itemData.taskfile_url === "Invalid URL"){
-			$item("#downloadtaskfiles").disable();
-		} else {
-			$item("#downloadtaskfiles").link = itemData.taskfile_url;
-			$item("#downloadtaskfiles").enable();
-
-		}
-
-		// Range URLS button enabling / disabling
-		// --------------------------------------
-		if (itemData.range_urls === "NO TASKS FOUND"){
-			$item("#showrangeboards").disable();
-		} else {
-			$item("#showrangeboards").enable();
-
-		}
-
-	});
-
-	// 3. Enabling repeater
-	// -------------------
-	$w('#loadingwaitbox').collapse();
-	$w('#mytasktextheaderbox').expand();
-	$w('#listtasksrepeater').data = items.reverse();
-	$w('#listtasksrepeater').expand();
 
 }
+
 
 // 2. Function to return final message for master status
 // -----------------------------------------------------
