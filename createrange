@@ -7,12 +7,13 @@ import { dep_values, cat_values_girls, cat_values_boys, cat_values_women, cat_va
 import wixUsers from 'wix-users';
 import wixLocation from 'wix-location';
 
+
 // Declarations for the page
 // -------------------------
 var selected_stylings_main = [];
 var uploadcounter = 0;
 var main_task_id;
-var main_user_id; // = "sharanya@geospot.in";
+var main_user_id;
 var main_gen_id;
 var thumbnail_local_urls = [];
 var to_be_uploaded_local_urls = [];
@@ -759,15 +760,17 @@ export async function retrievestylings() {
 	// -----------------------------------------------------------------
 	for (var key in line_urls) {
 
-		items.push({ "src": line_urls[key]["img_url"], "description": line_urls[key]["img_name"], "title": line_urls[key]["img_name"], "_id": key });
+		items.push({ "name": line_urls[key]["img_name"], "src": line_urls[key]["img_url"], "header": line_urls[key]["img_header"], "description": line_urls[key]["img_desc"], "_id": key });
 	}
 
 	// Setting repeater data
 	// ---------------------
 	$w('#stylingrepeater').onItemReady(($item, itemData, index) => {
+		$item("#stylingcheckbox").value = itemData.name;
 		$item("#stylingimage").src = itemData.src;
-		$item("#imgnametext").text = itemData.title;
-		$item("#stylingcheckbox").value = itemData.title;
+		$item("#stylingimageheader").text = itemData.header;
+		$item("#stylingimagedesc").text = itemData.description;
+		
 	});
 
 	// Enabling repeater
@@ -1048,7 +1051,11 @@ export async function createtexturesbutton_click(event) {
 // 4.1 Checking validity of rangeboard name input
 // -----------------------------------------------
 export function rangeboardname_keyPress(event) {
-	//Add your code for this event here: 
+	
+	// Setting pdf to disable
+	// ----------------------
+	$w("#downloadrangepdf").disable();
+	$w("#downloadrangepdf").label = "Download PDF";
 
 	// Checking validity
 	// -----------------
@@ -1064,7 +1071,11 @@ export function rangeboardname_keyPress(event) {
 // 4.2 Checking validity of rangeboard styling prefix input
 // --------------------------------------------------------
 export function rangeboardstylingprefix_keyPress(event) {
-	//Add your code for this event here: 
+	
+	// Setting pdf to disable
+	// ----------------------
+	$w("#downloadrangepdf").disable();
+	$w("#downloadrangepdf").label = "Download PDF";
 
 	// Checking validity
 	// -----------------
@@ -1085,10 +1096,12 @@ export async function generateideasbutton_click(event) {
 	// --------------------------
 	// 1. Trigerring create textures API
 	// ---------------------------------
+	$w("#generateideasinfo").text = "";
 	$w("#generateideasinfo").hide();
-	$w('#downloadrangepdf').collapse();
 	$w('#generateideasbutton').disable();
 	$w('#generateideasbutton').label = "Working.."
+	$w('#rangeboardname').disable();
+	$w('#rangeboardstylingprefix').disable();
 
 	// Setting MAIN TASK ID here
 	// -------------------------
@@ -1107,13 +1120,17 @@ export async function generateideasbutton_click(event) {
 				// Refresh items in box
 				// ---------------------
 				$w("#generateideasinfo").show();
-				$w("#generateideasinfo").text = "Done. Go on and generate again if you want! Gen ID: " + main_gen_id
-				$w('#generateideasbutton').enable();
-				$w('#generateideasbutton').label = "Build Range";
+				$w("#generateideasinfo").text = "Done! Please wait while we fetch your rangeboard."
+				$w('#generateideasbutton').label = "Create Rangeboard";
+				//$w('#generateideasbutton').enable();
+				
 
 				// Polling for PDF check
-				// ---------------------
-				
+				// ----------------------
+				// Setting Download PDF Button
+				// ----------------------------
+				$w("#downloadrangepdf").disable();
+				$w("#downloadrangepdf").label = "Fetching your range..";
 				gentimerid = setInterval(checkrangeavailable, 2000);
 			}
 			else {
@@ -1127,16 +1144,9 @@ export async function generateideasbutton_click(event) {
 	
 }
 
-
 // 4.5 A function that will check for rangeboard pdf
 // -------------------------------------------------
 export async function checkrangeavailable() {
-	//Add your code for this event here: 
-
-	// Setting Download PDF Button
-	// ----------------------------
-	$w("#downloadrangepdf").disable();
-	$w("#downloadrangepdf").label = "Fetching your range..";
 
 	var pdf_url = await getrangepdfurl(main_user_id, main_task_id, main_gen_id);
 
@@ -1149,6 +1159,14 @@ export async function checkrangeavailable() {
 		$w("#downloadrangepdf").link =  String(pdf_url);
 		$w("#downloadrangepdf").enable();
 		clearInterval(gentimerid);
+
+		// Enabling other feilds
+		// ---------------------
+		$w('#generateideasbutton').enable();
+		$w('#generateideasbutton').label = "Create Rangeboard"
+		$w('#rangeboardname').enable();
+		$w('#rangeboardstylingprefix').enable();
+		$w("#generateideasinfo").hide();
 	
 	}
 
