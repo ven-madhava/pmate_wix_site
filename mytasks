@@ -2,12 +2,21 @@
 
 // imports
 // -------
-import { gettaskids, getthemesurl, gettaskstatus, getallrangeboardsurl } from 'backend/aModule';
+import { gettaskfileboardurl, gettaskids, getthemesurl, gettaskstatus, getallrangeboardsurl } from 'backend/aModule';
 import { main_base_url } from 'public/public_initials.js';
 import wixUsers from 'wix-users';
 import wixLocation from 'wix-location';
+import wixWindow from 'wix-window';
+
 var main_user_id;
 var user_task_ids = [];
+
+// Page specific initialisations
+// -----------------------------
+var themesurl = [];
+var rangesurls = [];
+var taskmessages = [];
+var taskfilesurl = [];
 
 $w.onReady(function () {
 
@@ -64,6 +73,23 @@ $w.onReady(function () {
 
 });
 
+// 0 Returning readable time function
+// ----------------------------------
+export function readabletime_taskid(task_id) {
+
+	// 1. Getting timestamp and Converting to integer
+	// ---------------------------------------------
+	var timestamp = parseInt(task_id.replace("PMTASK",""), 10);
+	
+	// 2. Convertion
+	// -------------
+	var timeindate = new Date(timestamp);
+	var readable = timeindate.toLocaleString();
+	return readable
+
+}
+
+
 // 1. Function to set repeater items
 // ---------------------------------
 export async function settaskrepeateritems(task_ids) {
@@ -73,11 +99,6 @@ export async function settaskrepeateritems(task_ids) {
 	$w('#listtasksrepeater').collapse();
 	$w('#listtasksrepeater').data = [];
 	var items = [];
-	var rangitems = [];
-
-	var themesurl = [];
-	var rangesurls = [];
-	var taskmessages = [];
 
 	// 1. iterate for each task id and set themes and other content
 	// -----------------------------------------------------------
@@ -88,7 +109,7 @@ export async function settaskrepeateritems(task_ids) {
 		var curr_themesurls = await getthemesurl(main_user_id, task_ids[i]);
 		themesurl.push(curr_themesurls);
 
-		// 1.2 Fullfill themesurl arrays
+		// 1.2 Getting task status
 		// -----------------------------
 		var currtask = await gettaskstatus(main_user_id, task_ids[i]);
 		taskmessages[i] = returnmasterstatus(currtask["new_patterns"], currtask["prepare_stylings"], currtask["create_textures"]);
@@ -97,6 +118,11 @@ export async function settaskrepeateritems(task_ids) {
 		// ------------------------------------------------------------------
 		var curr_rangeurls = await getallrangeboardsurl(main_user_id, task_ids[i]);
 		rangesurls.push(curr_rangeurls)
+
+		// 1.4 Getting task file board pdf associated with task
+		// ----------------------------------------------------
+		var taskfile_url = await gettaskfileboardurl(main_user_id, task_ids[i]);
+		taskfilesurl.push(taskfile_url)
 
 		// 
 		//console.log("At Task: " + task_ids[i])
@@ -130,6 +156,8 @@ export async function settaskrepeateritems(task_ids) {
 			"range_urls": rangesurls[i],
 			"button_label": taskmessages[i][0]["button_label"],
 			"button_color": taskmessages[i][0]["button_color"],
+			"taskfile_url": taskfilesurl[i],
+			"created_on": readabletime_taskid(task_ids[i]),
 		});
 
 	}
@@ -147,16 +175,36 @@ export async function settaskrepeateritems(task_ids) {
 		// Setting other content
 		// ---------------------
 		$item("#masterstatuslabel").text = itemData.mast_message;
-		$item("#ttaskidlabel").text = itemData.task_id;
+		$item("#ttaskidlabel").text = itemData.task_id + ", Created on " + itemData.created_on;
+		$item("#taskidonlylabel").text = itemData.task_id;
 		$item("#themeslabel").text = itemData.new_pats;
 		$item("#stylingslabel").text = itemData.prep_stylings;
 		$item("#swatchedlabel").text = itemData.create_textures;
 		$item("#gototaskbutton").label = itemData.button_label;
 		$item("#gototaskbutton").style.backgroundColor = itemData.button_color;
-
+	
 		// Button details
 		// --------------
-		$item("#gototaskbutton").link = main_base_url + "/apitest/build-range?task_id=" + itemData.task_id;
+		$item("#gototaskbutton").link = main_base_url + "/build-range?task_id=" + itemData.task_id;
+
+		// Taskfile button
+		// ---------------
+		if (itemData.taskfile_url === "Invalid URL"){
+			$item("#downloadtaskfiles").disable();
+		} else {
+			$item("#downloadtaskfiles").link = itemData.taskfile_url;
+			$item("#downloadtaskfiles").enable();
+
+		}
+
+		// Range URLS button enabling / disabling
+		// --------------------------------------
+		if (itemData.range_urls === "NO TASKS FOUND"){
+			$item("#showrangeboards").disable();
+		} else {
+			$item("#showrangeboards").enable();
+
+		}
 
 	});
 
@@ -164,7 +212,7 @@ export async function settaskrepeateritems(task_ids) {
 	// -------------------
 	$w('#loadingwaitbox').collapse();
 	$w('#mytasktextheaderbox').expand();
-	$w('#listtasksrepeater').data = items;
+	$w('#listtasksrepeater').data = items.reverse();
 	$w('#listtasksrepeater').expand();
 
 }
@@ -252,8 +300,8 @@ export function returnmasterstatus(new_pats, prep_styling, create_textures) {
 
 		// Themes uploaded and learning but stylings not chosen
 		// ----------------------------------------------------
-		mstatus = "Ready for generation"
-		output.push({ "new_pats": doneok, "prep_styling": doneok, "create_textures": doneok, "master_status": mstatus, "button_label": "Generate Range", "button_color": green_color })
+		mstatus = "Good to go";
+		output.push({ "new_pats": doneok, "prep_styling": doneok, "create_textures": doneok, "master_status": mstatus, "button_label": "Create New Rangeboard", "button_color": green_color })
 		return output;
 
 	}
@@ -268,5 +316,36 @@ export async function createnewranges_click(event) {
 	// Using a redirect so that task_id gets embedded in the URL
 	// ---------------------------------------------------------
 	let baseUrl = wixLocation.baseUrl;
-	await wixLocation.to(main_base_url + "/apitest/build-range?task_id=NEW");
+	await wixLocation.to(main_base_url + "/build-range?task_id=NEW");
+}
+
+
+// 4. Function to show lightbox with rangeboards
+// ---------------------------------------------
+export async function showrangeboards_click(event) {
+
+	var lightboxitems = [];
+
+	// 1. Getting taskid
+	// -------------------
+	let $curritem = $w.at(event.context);
+	var curr_task_id = $curritem("#taskidonlylabel").text;
+
+	// 2. Getting range URLS and setting array to pass to lightbox
+	// ------------------------------------------------------------
+	var curr_rangeurls = await getallrangeboardsurl(main_user_id, curr_task_id);
+
+	// 3. Iteratiing and setting items to pass for light box repeater data
+	// -------------------------------------------------------------------
+	for (var i in curr_rangeurls) {
+		lightboxitems.push({"_id" : String(i), "rangeurl":curr_rangeurls[i]});
+	}
+
+	// 4 .Triggering lightbox
+	// ----------------------
+	wixWindow.openLightbox("rangeboardurlspopup", lightboxitems);
+	//setTimeout(wixWindow.openLightbox("rangeboardurlspopup", lightboxitems), 3000);
+
+	
+	
 }
