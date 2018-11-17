@@ -87,9 +87,13 @@ export async function settaskrepeateritemssingeshot(){
 		}
 		sort_keys.sort().reverse();
 
+		// Setting label
+		// -------------
+		$w('#mytasksheadertext').text = "You have " + String(sort_keys.length) + " ranges!"
+
 		// Tasks were found and we need to set repeater items
 		// --------------------------------------------------
-		for (var keys in sort_keys){
+		for (var keys in sort_keys) {
 			
 			// 1. Getting its taskmessage
 			// --------------------------
@@ -108,7 +112,9 @@ export async function settaskrepeateritemssingeshot(){
 			"button_color": taskmessage[0]["button_color"],
 			"taskfile_url": url_reponse[sort_keys[keys]]["taskfiles_url"],
 			"created_on": readabletime_taskid(sort_keys[keys]),
-		});
+			})
+
+		}
 
 
 		// 3. We now have items with data that needs to be pushed to repeater
@@ -135,6 +141,7 @@ export async function settaskrepeateritemssingeshot(){
 			// Button details
 			// --------------
 			$item("#gototaskbutton").link = main_base_url + "/build-range?task_id=" + itemData.task_id;
+
 
 			// Taskfile button
 			// ---------------
@@ -166,9 +173,8 @@ export async function settaskrepeateritemssingeshot(){
 
 
 
-		}
+	
 	}
-
 
 
 }
@@ -200,32 +206,31 @@ export function returnmasterstatus(new_pats, prep_styling, create_textures) {
 
 		// Themes uploaded and learning but stylings not chosen
 		// ----------------------------------------------------
-		mstatus = "Please select stylings to continue";
+		mstatus = "Select styling blocks to continue";
 		output.push({ "new_pats": inprog, "prep_styling": pending, "create_textures": pending, "master_status": mstatus, "button_label": "Continue", "button_color": red_color });
-		//output.push({ inprog,pending_s,pending_s,mstatus })
 		return output;
 
 	} else if (new_pats === 1 && prep_styling === 1 && create_textures === 0) {
 
 		// Themes uploaded and learning but stylings not chosen
 		// ----------------------------------------------------
-		mstatus = "AI initialised. You can pick swatches soon.";
-		output.push({ "new_pats": inprog, "prep_styling": inprog, "create_textures": pending, "master_status": mstatus, "button_label": "View Task", "button_color": red_color });
+		mstatus = "AI initialised, you can select swatches soon";
+		output.push({ "new_pats": inprog, "prep_styling": inprog, "create_textures": pending, "master_status": mstatus, "button_label": "View Range", "button_color": red_color });
 		return output;
 
 	} else if (new_pats === 1 && prep_styling === 2 && create_textures === 0) {
 
 		// Themes uploaded and learning but stylings not chosen
 		// ----------------------------------------------------
-		mstatus = "AI initialised. You can pick swatches soon.";
-		output.push({ "new_pats": inprog, "prep_styling": doneok, "create_textures": pending, "master_status": mstatus, "button_label": "View Task", "button_color": red_color })
+		mstatus = "AI initialised, you can select swatches soon";
+		output.push({ "new_pats": inprog, "prep_styling": doneok, "create_textures": pending, "master_status": mstatus, "button_label": "View Range", "button_color": red_color })
 		return output;
 
 	} else if (new_pats === 2 && prep_styling === 0 && create_textures === 0) {
 
 		// Themes uploaded and learning but stylings not chosen
 		// ----------------------------------------------------
-		mstatus = "Please select stylings to continue";
+		mstatus = "Select styling blocks to continue";
 		output.push({ "new_pats": doneok, "prep_styling": pending, "create_textures": pending, "master_status": mstatus, "button_label": "Continue", "button_color": red_color })
 		return output;
 
@@ -233,7 +238,7 @@ export function returnmasterstatus(new_pats, prep_styling, create_textures) {
 
 		// Themes uploaded and learning but stylings not chosen
 		// ----------------------------------------------------
-		mstatus = "You can pick swatches now";
+		mstatus = "Select swatches to continue";
 		output.push({ "new_pats": doneok, "prep_styling": inprog, "create_textures": pending, "master_status": mstatus, "button_label": "Continue", "button_color": red_color })
 		return output;
 
@@ -241,7 +246,7 @@ export function returnmasterstatus(new_pats, prep_styling, create_textures) {
 
 		// Themes uploaded and learning but stylings not chosen
 		// ----------------------------------------------------
-		mstatus = "You can pick swatches now";
+		mstatus = "Select swatches to continue";
 		output.push({ "new_pats": doneok, "prep_styling": doneok, "create_textures": pending, "master_status": mstatus, "button_label": "Continue", "button_color": red_color })
 		return output;
 
@@ -249,16 +254,16 @@ export function returnmasterstatus(new_pats, prep_styling, create_textures) {
 
 		// Themes uploaded and learning but stylings not chosen
 		// ----------------------------------------------------
-		mstatus = "AI Initialised. You can generate ranges soon";
-		output.push({ "new_pats": doneok, "prep_styling": inprog, "create_textures": inprog, "master_status": mstatus, "button_label": "View Task", "button_color": red_color })
+		mstatus = "AI training will complete soon";
+		output.push({ "new_pats": doneok, "prep_styling": inprog, "create_textures": inprog, "master_status": mstatus, "button_label": "View Range", "button_color": red_color })
 		return output;
 
 	} else if (new_pats === 2 && prep_styling === 2 && create_textures === 2) {
 
 		// Themes uploaded and learning but stylings not chosen
 		// ----------------------------------------------------
-		mstatus = "Good to go";
-		output.push({ "new_pats": doneok, "prep_styling": doneok, "create_textures": doneok, "master_status": mstatus, "button_label": "Create New Rangeboard", "button_color": green_color })
+		mstatus = "Create range boards";
+		output.push({ "new_pats": doneok, "prep_styling": doneok, "create_textures": doneok, "master_status": mstatus, "button_label": "Create New Range Board", "button_color": green_color })
 		return output;
 
 	}
