@@ -153,7 +153,7 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		// --------------------------------------
 		$w('#aiinitialisedbox').expand();
 		$w('#aiinitialisedheader').text = "AI Initialised"
-		$w('#aiinitialisedpara').text = "Our AI is learning features from your inspiration images & stylings. Give it a while and then you can pick the patterns you like to start creating your range.";
+		$w('#aiinitialisedpara').text = "We have initialised our AI and training it based on your inputs. This may take a few minutes.";
 		// Calling progress function
 		// -------------------------
 		progresstimerid = setInterval(getprogressupdate, 2000, main_user_id, main_task_id);
@@ -274,8 +274,8 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		// 4. AI initialised box display settings
 		// --------------------------------------
 		$w('#aiinitialisedbox').expand();
-		$w('#aiinitialisedheader').text = "All Done. Hang in there while our AI completes"
-		$w('#aiinitialisedpara').text = "Your side of inputs is now done. Our AI is progressing through your inputs. Give it a few minutes and you can start generate your range. Follow progress of your task below.";
+		$w('#aiinitialisedheader').text = "All Done! Hang in there while our AI completes"
+		$w('#aiinitialisedpara').text = "Your side of inputs is now done. AI training will complete in a few minutes.";
 		// Calling progress function
 		// -------------------------
 		progresstimerid = setInterval(getprogressupdate, 2000, main_user_id, main_task_id);
@@ -555,8 +555,7 @@ export async function selectfile_change(event) {
 			// Updating uploadfile text
 			// ------------------------
 			uploads_left = max_themes_upload - uploadcounter;
-			$w('#uploadfiletext').text = uploads_left + " more images can be uploaded to this current task. A minimum of " + String(min_themes_upload) + " is required."
-			$w('#uploadfiletext').text += " User in: " + main_user_id
+			$w('#uploadfiletext').text = uploads_left + " more inspiration images can be uploaded for this range."
 			// Enabling create task button!
 			// ----------------------------
 			if (uploadcounter >= min_themes_upload) {
@@ -569,7 +568,7 @@ export async function selectfile_change(event) {
 		} else {
 
 			$w('#selectfile').disable();
-			$w('#uploadfiletext').text = "No more uploads possible. We are limiting our themes to " + String(max_themes_upload) + " for pilot.";
+			$w('#uploadfiletext').text = "No more uploads possible. We are limiting to " + String(max_themes_upload) + " inspiration images per range for beta.";
 		}
 
 	} catch (err) {
@@ -668,7 +667,7 @@ export async function pickstylingsbutton_click(event) {
 				// new patterns api NOT started
 				// ----------------------------
 				$w('#pickstylingsbutton').enable();
-				$w('#pickstylingsbutton').label = "Done";
+				$w('#pickstylingsbutton').label = "Upload Now";
 				$w('#newpatternserrorlabel').text = "Something went wrong. Try again in a while. Here's the error response: " + String(url_response);
 
 			}
@@ -744,7 +743,7 @@ export async function retrievestylings() {
 
 	// Disabling button for repeat calls
 	// ---------------------------------
-	$w('#stylingscounterlabel').text = "Loading.."
+	$w('#stylingscounterlabel').text = "Loading styling blocks.."
 
 	// Calling API to get urls JSON
 	// ----------------------------
@@ -791,13 +790,13 @@ export async function retrievestylings() {
 		// --------------------
 		$w('#uploadstylingsbutton').expand();
 		$w('#uploadstylingsbutton').enable();
-		$w('#stylingscounterlabel').text = "( " + String(selected_stylings_main.length) + " styling(s) selected. You can now submit your stylings. )"
+		$w('#stylingscounterlabel').text = "( " + String(selected_stylings_main.length) + " styling block(s) selected. You can now submit your selection. )"
 
 	} else {
 		// Disable upload button
 		// --------------------
 		$w('#uploadstylingsbutton').disable();
-		$w('#stylingscounterlabel').text = String(selected_stylings_main.length) + " styling(s) selected. You need a minimum of " + String(threshold_styling_select) + " stylings to be chosen for building the range."
+		$w('#stylingscounterlabel').text = String(selected_stylings_main.length) + " styling block(s) selected. Minimum required: " + String(threshold_styling_select) + "."
 	}
 
 }
@@ -841,20 +840,20 @@ export function stylingcheckbox_change(event, $w) {
 		// --------------------
 		$w('#uploadstylingsbutton').expand();
 		$w('#uploadstylingsbutton').enable();
-		countertext = "( " + String(selected_stylings_main.length) + " styling(s) selected. You can now submit your stylings. )";
+		countertext = "( " + String(selected_stylings_main.length) + " styling block(s) selected. You can now submit your selection. )"
 
 	} else {
 		// Disable upload button
 		// --------------------
 		$w('#uploadstylingsbutton').disable();
-		countertext = String(selected_stylings_main.length) + " styling(s) selected. You need a minimum of " + String(threshold_styling_select) + " stylings to be chosen for building the range."
+		countertext = String(selected_stylings_main.length) + " styling block(s) selected. Minimum required: " + String(threshold_styling_select) + "."
 	}
 
 	// Setting countertext label text
 	// ------------------------------
 	$w('#stylingscounterlabel').text = countertext
 	$w('#floatingbox').show()
-	$w('#floatingcounterlabel').text =  String(selected_stylings_main.length) + " styling(s) selected. " + String(threshold_styling_select) + " minumium required."
+	$w('#floatingcounterlabel').text =  countertext
 
 }
 
@@ -885,8 +884,8 @@ export async function uploadstylingsbutton_click(event) {
 
 				// code
 				$w('#uploadstylingsbutton').enable();
-				$w('#uploadstylingsbutton').label = "Done"
-				$w('#stylingscounterlabel').text = "Oops an error. " + String(url_response)
+				$w('#uploadstylingsbutton').label = "Submit Selection"
+				$w('#stylingscounterlabel').text = "Something went wrong. Try again in a while. Here's the error response: " + String(url_response)
 
 			}
 
@@ -906,7 +905,7 @@ export async function load_all_patterns(user_id, task_id) {
 
 	// Some sanity clean ups
 	// ---------------------
-	$w('#pickedpatternscounterlabel').text = "Loading patterns..";
+	$w('#pickedpatternscounterlabel').text = "Loading swatches..";
 	$w('#allpatternsrepeater').collapse();
 	$w('#allpatternsrepeater').data = [];
 	$w('#createtexturesbutton').disable();
@@ -933,11 +932,11 @@ export async function load_all_patterns(user_id, task_id) {
 
 	// Enabling repeater
 	// -----------------
-	$w('#pickedpatternscounterlabel').text = "Loading patterns..";
+	$w('#pickedpatternscounterlabel').text = "Loading swatches..";
 	$w('#loadingwaitbox').expand();
 	$w('#allpatternsrepeater').data = items;
 	$w('#allpatternsrepeater').expand();
-	$w('#pickedpatternscounterlabel').text = String(items.length) + " patterns loaded. Start picking!";
+	$w('#pickedpatternscounterlabel').text = String(items.length) + " swatches loaded. Start selecting!";
 
 	// Using setouttime to show loading
 	// --------------------------------
@@ -991,20 +990,20 @@ export function selectpatternchkbox_change(event) {
 		// Enable create texture button
 		// ----------------------------
 		$w('#createtexturesbutton').enable();
-		countertext = "( " + String(selected_patterns_main.length) + " patterns(s) selected. You can now submit your selections. )"
+		countertext = "( " + String(selected_patterns_main.length) + " swatch(es) selected. You can now submit your selection. )"
 
 	} else {
 		// Disable upload button
 		// --------------------
 		$w('#createtexturesbutton').disable();
-		countertext = String(selected_patterns_main.length) + " patterns(s) selected. You need a minimum of " + String(threshold_pattern_select) + " patterns to be chosen for building the range."
+		countertext = String(selected_patterns_main.length) + " swatch(es) selected. Minimum required: " + String(threshold_pattern_select) + "."
 	}
 
 	// Setting countertext label text
 	// ------------------------------
 	$w('#pickedpatternscounterlabel').text = countertext
 	$w('#floatingbox').show()
-	$w('#floatingcounterlabel').text =  String(selected_patterns_main.length) + " pattern(s) selected. " + String(threshold_pattern_select) + " minumium required."
+	$w('#floatingcounterlabel').text =  countertext
 
 
 }
@@ -1031,8 +1030,8 @@ export async function createtexturesbutton_click(event) {
 			else {
 				// code
 				$w('#createtexturesbutton').enable();
-				$w('#createtexturesbutton').label = "Done"
-				$w('#pickedpatternscounterlabel').text = "Oops an error. " + String(url_response)
+				$w('#createtexturesbutton').label = "Submit Selection"
+				$w('#pickedpatternscounterlabel').text = "Something went wrong. Try again in a while. Here's the error response: " + String(url_response)
 			}
 		});
 
@@ -1114,8 +1113,8 @@ export async function generateideasbutton_click(event) {
 				// Refresh items in box
 				// ---------------------
 				$w("#generateideasinfo").show();
-				$w("#generateideasinfo").text = "Done! Please wait while we fetch your rangeboard."
-				$w('#generateideasbutton').label = "Create Rangeboard";
+				$w("#generateideasinfo").text = "Done! Please wait while we fetch your range board."
+				$w('#generateideasbutton').label = "Create New Range Board";
 				//$w('#generateideasbutton').enable();
 				
 
@@ -1124,14 +1123,14 @@ export async function generateideasbutton_click(event) {
 				// Setting Download PDF Button
 				// ----------------------------
 				$w("#downloadrangepdf").disable();
-				$w("#downloadrangepdf").label = "Fetching your range..";
+				$w("#downloadrangepdf").label = "Fetching your range board..";
 				gentimerid = setInterval(checkrangeavailable, 2000);
 			}
 			else {
 				// Refresh items in box
 				// ---------------------
 				$w("#generateideasinfo").show();
-				$w("#generateideasinfo").text = "Error. Something went wrong. " + String(url_response) + " Gen ID: " + main_gen_id
+				$w("#generateideasinfo").text = "Something went wrong. Try again in a while. Here's the error response: " + String(url_response)
 			}
 		});
 
@@ -1153,14 +1152,20 @@ export async function checkrangeavailable() {
 		$w("#downloadrangepdf").link =  String(pdf_url);
 		$w("#downloadrangepdf").enable();
 		clearInterval(gentimerid);
-
-		// Enabling other feilds
-		// ---------------------
-		$w('#generateideasbutton').enable();
 		$w('#generateideasbutton').label = "Create Rangeboard"
-		$w('#rangeboardname').enable();
-		$w('#rangeboardstylingprefix').enable();
-		$w("#generateideasinfo").hide();
+		
+
+		setTimeout(()=>{
+
+			// Enabling other feilds after 10 secs
+			// -----------------------------------
+			$w('#generateideasbutton').enable();
+			$w('#rangeboardname').enable();
+			$w('#rangeboardstylingprefix').enable();
+			$w("#generateideasinfo").hide();
+
+		}, 10000)
+		
 	
 	}
 
@@ -1234,7 +1239,7 @@ export async function getprogressupdate(user_id, task_id){
 			}
 			items.push({
 				"_id":task_id + "2",
-				"progress_for": "Processing Selected Stylings",
+				"progress_for": "Processing Selected Styling Blocks",
 				"curr_step": curr_progress_ps["curr_step"] + 1,
 				"total_step": curr_progress_ps["total_step"] + 1,
 				"curr_message":curr_progress_ps["curr_message"],
@@ -1258,7 +1263,7 @@ export async function getprogressupdate(user_id, task_id){
 			}
 			items.push({
 				"_id":task_id + "3",
-				"progress_for": "Processing Selected Patterns",
+				"progress_for": "Processing Selected Swatches",
 				"curr_step": curr_progress_ct["curr_step"] + 1,
 				"total_step": curr_progress_ct["total_step"] + 1,
 				"curr_message":curr_progress_ct["curr_message"],
