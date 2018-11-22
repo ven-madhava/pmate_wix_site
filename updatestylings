@@ -104,7 +104,6 @@ export async function retrievestylings() {
 	let items = [];
 	var cat = $w('#catdropdown').value;
 	currentcatlabel = $w('#catdropdown').options[$w('#catdropdown').selectedIndex]["label"];
-	console.log(currentcatlabel)
 
 	// Disabling button for repeat calls
 	// ---------------------------------
@@ -122,28 +121,24 @@ export async function retrievestylings() {
 	}
 
 	// Setting repeater data
-	// ---------------------
-	console.log('Setting repeater data..')
-	$w('#stylingrepeater').onItemReady(async ($item, itemData, index) => {
+	// ----------------------
+	$w('#stylingrepeater').onItemReady( ($item, itemData, index) => {
 		$item("#linemarkingimage").src = itemData.lm_src;
 		$item("#segmentimage").src = itemData.sm_src;
 		$item("#oldheaderlabel").text = itemData.header;
 		$item("#olddesclabel").text = itemData.description;
 		$item("#statusbar").style.backgroundColor = red_color;
-		$item("#newheaderlabel").text = "";
-		$item("#newdesclabel").text = "";
-
-		await setradiogroups(cat, $item);
+		$item("#newheaderlabel").text = "header not set";
+		$item("#newdesclabel").text = "description not set";
+		
+		// Setting radio group options
+		// ---------------------------
+		$item("#fitradio").options = [];
+		$item("#stylingradio").options = [];
+		$item("#segmentsradio").options = [];
+		setradiogroups(cat, $item);
 		
 	});
-
-	// Setting radio options
-	// ---------------------
-	//$w('#stylingrepeater').forEachItem(($item, itemData, index) => {
-		//console.log('Inside for each item in repeater data..')
-		//setradiogroups(cat, $item);
-
-	//});
 
 	// Enabling repeater
 	// -----------------
@@ -154,8 +149,6 @@ export async function retrievestylings() {
 	$w('#stylingscounterlabel').text = String(items.length) + " styling blocks loaded. Start editing."
 	$w('#updatedetails').enable();
 
-	
-
 }
 
 
@@ -163,7 +156,9 @@ export async function retrievestylings() {
 // -------------------------------
 export function setradiogroups(cat, item){
 
-	console.log('Inside if statements of setting radio options...')
+	// Sanity
+	// ------
+	cat = parseInt(cat, 10);
 
 	if (cat === 13 || cat === 33) {
 
@@ -294,8 +289,6 @@ export function setradiogroups(cat, item){
 // --------------------------
 function setradiooptions(cat, item) {
 
-	console.log('Inside real set optionss...')
-
 	// Some initialisations
 	// --------------------
 	var fitoptions = [];
@@ -305,8 +298,6 @@ function setradiooptions(cat, item) {
 	// Styling dataset funtion
 	// -----------------------
 	$w("#stylingdataset").onReady( () => {
-
-		console.log('Dataset ready...')
 		
 		// Getting count
 		// -------------
@@ -337,14 +328,10 @@ function setradiooptions(cat, item) {
 				}
 
 				// Setting radio group
-				// -------------------
+				// -------------------item
 				item('#fitradio').options = fitoptions;
 				item('#stylingradio').options = styoptions;
 				item('#segmentsradio').options =  segoptions;
-
-				console.log('Inside set radio option..')
-				console.log([fitoptions, styoptions, segoptions])
-				console.log("----------------------------")
 
 		});
 
