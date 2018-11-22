@@ -790,13 +790,13 @@ export async function retrievestylings() {
 		// --------------------
 		$w('#uploadstylingsbutton').expand();
 		$w('#uploadstylingsbutton').enable();
-		$w('#stylingscounterlabel').text = "( " + String(selected_stylings_main.length) + " styling block(s) selected. You can now submit your selection. )"
+		$w('#stylingscounterlabel').text = String(items.length) +  " styling blocks loaded. " + String(selected_stylings_main.length) + " styling block(s) selected. You can now submit your selection."
 
 	} else {
 		// Disable upload button
 		// --------------------
 		$w('#uploadstylingsbutton').disable();
-		$w('#stylingscounterlabel').text = String(selected_stylings_main.length) + " styling block(s) selected. Minimum required: " + String(threshold_styling_select) + "."
+		$w('#stylingscounterlabel').text = String(items.length) + " styling blocks loaded. " + String(selected_stylings_main.length) + " styling block(s) selected. Minimum required: " + String(threshold_styling_select) + "."
 	}
 
 }
@@ -840,7 +840,7 @@ export function stylingcheckbox_change(event, $w) {
 		// --------------------
 		$w('#uploadstylingsbutton').expand();
 		$w('#uploadstylingsbutton').enable();
-		countertext = "( " + String(selected_stylings_main.length) + " styling block(s) selected. You can now submit your selection. )"
+		countertext = String(selected_stylings_main.length) + " styling block(s) selected. You can now submit your selection."
 
 	} else {
 		// Disable upload button
@@ -990,7 +990,7 @@ export function selectpatternchkbox_change(event) {
 		// Enable create texture button
 		// ----------------------------
 		$w('#createtexturesbutton').enable();
-		countertext = "( " + String(selected_patterns_main.length) + " swatch(es) selected. You can now submit your selection. )"
+		countertext = String(selected_patterns_main.length) + " swatch(es) selected. You can now submit your selection."
 
 	} else {
 		// Disable upload button
@@ -1203,23 +1203,45 @@ export async function getprogressupdate(user_id, task_id){
 
 			var curr_progress_np = await getprogress(task_id, 1);
 			var curr_time_left_np;
-			if (curr_progress_np["curr_process_time_remaining"] === "ETA Not Available") {
 
-				curr_time_left_np = "Working.. please wait";
+			if (String(curr_progress_np["runnning_status"]).toLowerCase().includes("error")) {
+				
+				// There is an error
+				// -----------------
+				curr_time_left_np = "Not available";
+				items.push({
+					"_id":task_id + "1",
+					"progress_for": "Processing Uploaded Inspirations",
+					"curr_step": "None",
+					"total_step": curr_progress_np["total_step"] + 1,
+					"curr_message": "Sorry but an error has occured. Please start again from the beginning.",
+					"curr_time_left": curr_time_left_np
+				})
 
 			} else {
-				
-				curr_time_left_np = curr_progress_np["curr_process_time_remaining"];
 
-			}
-			items.push({
-				"_id":task_id + "1",
-				"progress_for": "Processing Uploaded Inspirations",
-				"curr_step": curr_progress_np["curr_step"] + 1,
-				"total_step": curr_progress_np["total_step"] + 1,
-				"curr_message":curr_progress_np["curr_message"],
-				"curr_time_left": curr_time_left_np
+				// No error
+				// -------
+				if (curr_progress_np["curr_process_time_remaining"] === "ETA Not Available") {
+
+					curr_time_left_np = "Working.. please wait";
+
+				} else {
+					
+					curr_time_left_np = curr_progress_np["curr_process_time_remaining"];
+
+				}
+
+				// Need to check runnning_status
+				items.push({
+					"_id":task_id + "1",
+					"progress_for": "Processing Uploaded Inspirations",
+					"curr_step": curr_progress_np["curr_step"] + 1,
+					"total_step": curr_progress_np["total_step"] + 1,
+					"curr_message":curr_progress_np["curr_message"],
+					"curr_time_left": curr_time_left_np
 				})
+			}
 			
 		}
 		// 2. Checking if styling preparations underway
@@ -1228,23 +1250,46 @@ export async function getprogressupdate(user_id, task_id){
 
 			var curr_progress_ps = await getprogress(task_id, 2);
 			var curr_time_left_ps;
-			if (curr_progress_ps["curr_process_time_remaining"] === "ETA Not Available") {
 
-				curr_time_left_ps = "Working.. please wait";
+			if (String(curr_progress_ps["runnning_status"]).toLowerCase().includes("error")) {
 
-			} else {
-				
-				curr_time_left_ps = curr_progress_ps["curr_process_time_remaining"];
-
-			}
-			items.push({
+				// There is an error
+				// -----------------
+				curr_time_left_ps = "Not available"
+				items.push({
 				"_id":task_id + "2",
 				"progress_for": "Processing Selected Styling Blocks",
-				"curr_step": curr_progress_ps["curr_step"] + 1,
+				"curr_step": "None",
 				"total_step": curr_progress_ps["total_step"] + 1,
-				"curr_message":curr_progress_ps["curr_message"],
+				"curr_message": "Sorry but an error has occured. Please start again from the beginning.",
 				"curr_time_left": curr_time_left_ps
 				})
+				
+				
+
+			} else {
+
+				if (curr_progress_ps["curr_process_time_remaining"] === "ETA Not Available") {
+
+					curr_time_left_ps = "Working.. please wait";
+
+				} else {
+					
+					curr_time_left_ps = curr_progress_ps["curr_process_time_remaining"];
+
+				}
+				items.push({
+					"_id":task_id + "2",
+					"progress_for": "Processing Selected Styling Blocks",
+					"curr_step": curr_progress_ps["curr_step"] + 1,
+					"total_step": curr_progress_ps["total_step"] + 1,
+					"curr_message":curr_progress_ps["curr_message"],
+					"curr_time_left": curr_time_left_ps
+				})
+
+
+			}
+			
 		}
 		// 3. Checking if create textures underway
 		// ---------------------------------------
@@ -1252,23 +1297,44 @@ export async function getprogressupdate(user_id, task_id){
 
 			var curr_progress_ct = await getprogress(task_id, 3);
 			var curr_time_left_ct;
-			if (curr_progress_ct["curr_process_time_remaining"] === "ETA Not Available") {
 
-				curr_time_left_ct = "Working.. please wait";
+			if (String(curr_progress_ct["runnning_status"]).toLowerCase().includes("error")) {
+
+				// Error
+				curr_time_left_ct = "Not available."
+				items.push({
+					"_id":task_id + "3",
+					"progress_for": "Processing Selected Swatches",
+					"curr_step": "None",
+					"total_step": curr_progress_ct["total_step"] + 1,
+					"curr_message":"Sorry but an error has occured. Please start again from the beginning.",
+					"curr_time_left": curr_time_left_ct
+				})
 
 			} else {
-				
-				curr_time_left_ct = curr_progress_ct["curr_process_time_remaining"];
+
+				if (curr_progress_ct["curr_process_time_remaining"] === "ETA Not Available") {
+
+					curr_time_left_ct = "Working.. please wait";
+
+				} else {
+					
+					curr_time_left_ct = curr_progress_ct["curr_process_time_remaining"];
+
+				}
+				items.push({
+					"_id":task_id + "3",
+					"progress_for": "Processing Selected Swatches",
+					"curr_step": curr_progress_ct["curr_step"] + 1,
+					"total_step": curr_progress_ct["total_step"] + 1,
+					"curr_message":curr_progress_ct["curr_message"],
+					"curr_time_left": curr_time_left_ct
+				})
+
 
 			}
-			items.push({
-				"_id":task_id + "3",
-				"progress_for": "Processing Selected Swatches",
-				"curr_step": curr_progress_ct["curr_step"] + 1,
-				"total_step": curr_progress_ct["total_step"] + 1,
-				"curr_message":curr_progress_ct["curr_message"],
-				"curr_time_left": curr_time_left_ct
-				})
+
+			
 		}
 
 		// Setting repeater data
@@ -1299,10 +1365,4 @@ export async function getprogressupdate(user_id, task_id){
 	}
 	
 
-
-
-
-	
-
 }
-
