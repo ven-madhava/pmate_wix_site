@@ -1,0 +1,458 @@
+// For full API documentation, including code examples, visit http://wix.to/94BuAAs
+
+import { validateadminaccess, getallstylingsurl } from 'backend/aModule';
+import { dep_values, cat_values_girls, cat_values_boys, cat_values_women, cat_values_men, threshold_styling_select, max_themes_upload, min_themes_upload, main_base_url, threshold_pattern_select } from 'public/public_initials.js';
+import wixUsers from 'wix-users';
+import wixLocation from 'wix-location';
+
+// Some local page specific initialisations
+// ----------------------------------------
+var red_color = "#FF4040";
+var green_color = "#41BAAE";
+var updatecounter = 0;
+var currentcatlabel;
+
+// 1. Onready function
+// --------------------
+$w.onReady(function () {
+
+	// Setting department dropdown values
+	// ----------------------------------
+	$w('#depdropdown').options = dep_values;
+	$w('#depdropdown').enable();
+	$w('#catdropdown').disable();
+	$w('#stylingrepeater').collapse();
+	$w('#stylingscounterlabel').text = "";
+	$w('#updatedetails').disable();
+
+});
+
+
+
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// 2. PICK STYLINGS FUNCTIONS
+
+// 2.1 Function that runs when departmentdropdown_change(event)
+// ------------------------------------------------------------
+export async function depdropdown_change(event) {
+	//Add your code for this event here:
+	
+
+	// LOCAL Display settings ----------------------------------------------------
+	$w('#catdropdown').disable();
+	$w('#updatedetails').disable();
+	$w('#stylingrepeater').collapse();
+	$w('#stylingrepeater').data = [];
+	// LOCAL END OF DISPLAY SETTINGS -----------------------------------------------
+
+	// If statements
+	// -------------
+	if ($w('#depdropdown').value === "GL") {
+		$w('#catdropdown').options = cat_values_girls;
+		$w('#catdropdown').selectedIndex = 0;
+		currentcatlabel = cat_values_girls[0]["label"];
+
+	} else if ($w('#depdropdown').value === "BY") {
+		$w('#catdropdown').options = cat_values_boys;
+		$w('#catdropdown').selectedIndex = 0;
+		currentcatlabel = cat_values_boys[0]["label"];
+
+	} else if ($w('#depdropdown').value === "WM") {
+		$w('#catdropdown').options = cat_values_women;
+		$w('#catdropdown').selectedIndex = 0;
+		currentcatlabel = cat_values_women[0]["label"];
+
+	} else if ($w('#depdropdown').value === "MN") {
+		$w('#catdropdown').options = cat_values_men;
+		$w('#catdropdown').selectedIndex = 0;
+		currentcatlabel = cat_values_men[0]["label"];
+	}
+	
+	// Calling retrievestylings function
+	// ---------------------------------
+	await retrievestylings();
+}
+
+
+// 2.2 Function on catdropdown change
+// -----------------------------------
+export async function catdropdown_change(event) {
+	//Add your code for this event here: 
+
+	// Just call get stylings API
+	// -------------------------
+	await retrievestylings();
+
+
+
+}
+
+
+// 2.3 Function that loads stylings using styling API
+// ---------------------------------------------------
+export async function retrievestylings() {
+
+	// LOCAL Display settings
+	// ------------------------
+	$w('#stylingrepeater').collapse();
+	$w('#stylingrepeater').data = [];
+	$w('#catdropdown').disable();
+	$w('#depdropdown').disable();
+	$w('#updatedetails').disable();
+
+	let items = [];
+	var cat = $w('#catdropdown').value;
+	currentcatlabel = $w('#catdropdown').options[$w('#catdropdown').selectedIndex]["label"];
+	console.log(currentcatlabel)
+
+	// Disabling button for repeat calls
+	// ---------------------------------
+	$w('#stylingscounterlabel').text = "Loading styling blocks.."
+
+	// Calling API to get urls JSON
+	// ----------------------------
+	var line_urls = await getallstylingsurl(cat);
+
+	// Itering through the top level keys and setting items array to use
+	// -----------------------------------------------------------------
+	for (var key in line_urls) {
+
+		items.push({ "name": line_urls[key]["img_name"], "cat": cat, "lm_src": line_urls[key]["img_url"], "sm_src": line_urls[key]["img_url"].replace("linemarkings","segments"), "header": line_urls[key]["img_header"], "description": line_urls[key]["img_desc"], "_id": key });
+	}
+
+	// Setting repeater data
+	// ---------------------
+	console.log('Setting repeater data..')
+	$w('#stylingrepeater').onItemReady(async ($item, itemData, index) => {
+		$item("#linemarkingimage").src = itemData.lm_src;
+		$item("#segmentimage").src = itemData.sm_src;
+		$item("#oldheaderlabel").text = itemData.header;
+		$item("#olddesclabel").text = itemData.description;
+		$item("#statusbar").style.backgroundColor = red_color;
+		$item("#newheaderlabel").text = "";
+		$item("#newdesclabel").text = "";
+
+		await setradiogroups(cat, $item);
+		
+	});
+
+	// Setting radio options
+	// ---------------------
+	//$w('#stylingrepeater').forEachItem(($item, itemData, index) => {
+		//console.log('Inside for each item in repeater data..')
+		//setradiogroups(cat, $item);
+
+	//});
+
+	// Enabling repeater
+	// -----------------
+	$w('#stylingrepeater').data = items;
+	$w('#stylingrepeater').expand();
+	$w('#catdropdown').enable();
+	$w('#depdropdown').enable();
+	$w('#stylingscounterlabel').text = String(items.length) + " styling blocks loaded. Start editing."
+	$w('#updatedetails').enable();
+
+	
+
+}
+
+
+// 2.4 Function to set radiogroups
+// -------------------------------
+export function setradiogroups(cat, item){
+
+	console.log('Inside if statements of setting radio options...')
+
+	if (cat === 13 || cat === 33) {
+
+		// boys & Mens knit polos and tees
+		// -------------------------------
+		setradiooptions("1333", item);
+		
+	} else if (cat === 14 || cat === 34) {
+
+		// boys & Mens woven shirts
+		// ------------------------
+		setradiooptions("1434", item);
+		
+	} else if (cat === 15 || cat === 35) {
+
+		// boys & Mens jeans
+		// -----------------
+		setradiooptions("1535", item);
+		
+	} else if (cat === 16 || cat === 36) {
+
+		// boys & Mens woven pants
+		// -----------------------
+		setradiooptions("1636", item);
+	
+	} else if (cat === 17 || cat === 37) {
+
+		// boys & Mens knit pants
+		// ----------------------
+		setradiooptions("1737", item);
+		
+	} else if (cat === 18 || cat === 38) {
+
+		// boys & Mens woven shorts
+		// ------------------------
+		setradiooptions("1838", item);
+		
+	} else if (cat === 19 || cat === 39) {
+
+		// boys & Mens knit shorts
+		// -----------------------
+		setradiooptions("1939", item);
+
+	} else if (cat === 0 || cat === 20) {
+
+		// girls and womens woven  dresses
+		// --------------------------------
+		setradiooptions("020", item);
+		
+		
+	} else if (cat === 1 || cat === 21) {
+
+		// girls and womens knit  dresses
+		// --------------------------------
+		setradiooptions("121", item);
+		
+	} else if (cat === 2 || cat === 22) {
+
+		// girls and womens tops
+		// ---------------------
+		setradiooptions("222", item);
+		
+	} else if (cat === 3 || cat === 23) {
+
+		// girls and womens knit  tops
+		// ----------------------------
+		setradiooptions("323", item);
+		
+	} else if (cat === 4 || cat === 24) {
+
+		// girls and womens knit  polos
+		// ----------------------------
+		setradiooptions("424", item);
+		
+	} else if (cat === 5 || cat === 25) {
+
+		// girls and womens woven jumpers
+		// ------------------------------
+		setradiooptions("525", item);
+		
+	} else if (cat === 6 || cat === 26) {
+
+		// girls and womens knit jumpers
+		// -----------------------------
+		setradiooptions("626", item);
+		
+	} else if (cat === 7 || cat === 27) {
+
+		// girls and womens woven pants and capri
+		// --------------------------------------
+		setradiooptions("727", item);
+		
+	} else if (cat === 8 || cat === 28) {
+
+		// girls and womens knit pants and capri
+		// -------------------------------------
+		setradiooptions("828", item);
+		
+	} else if (cat === 9 || cat === 29) {
+
+		// girls and womens knit leggings
+		// ------------------------------
+		setradiooptions("929", item);
+		
+	} else if (cat === 10 || cat === 30) {
+
+		// girls and womens woven shorts
+		// -----------------------------
+		setradiooptions("1030", item);
+		
+	} else if (cat === 11 || cat === 31) {
+
+		// girls and womens knit shorts
+		// ----------------------------
+		setradiooptions("1131", item);
+		
+	} else if (cat === 12 || cat === 32) {
+
+		// girls and womens woven skirts and skorts
+		// ----------------------------------------
+		setradiooptions("1232", item);
+		
+	}
+
+}
+
+// 2.5 Setting radio options
+// --------------------------
+function setradiooptions(cat, item) {
+
+	console.log('Inside real set optionss...')
+
+	// Some initialisations
+	// --------------------
+	var fitoptions = [];
+	var styoptions = [];
+	var segoptions = [];
+
+	// Styling dataset funtion
+	// -----------------------
+	$w("#stylingdataset").onReady( () => {
+
+		console.log('Dataset ready...')
+		
+		// Getting count
+		// -------------
+		let count = $w("#stylingdataset").getTotalCount();
+		$w("#stylingdataset").getItems(0,count)
+			.then( (result) => {
+
+				let items = result.items;
+
+				// Setting fit, styling, segment array
+				// -----------------------------------
+				for (var i in items){
+
+					if (parseInt(items[i]['title'], 10) === parseInt(cat,10) && items[i]['type'] === "fit") {
+
+						fitoptions.push({"value":items[i]['content'], "label":items[i]['content']})
+				
+					} else if (parseInt(items[i]['title'], 10) === parseInt(cat,10) && items[i]['type'] === "styling") {
+
+						styoptions.push({"value":items[i]['content'], "label":items[i]['content']})
+
+					} else if (parseInt(items[i]['title'], 10) === parseInt(cat,10) && items[i]['type'] === "segment") {
+
+						segoptions.push({"value":items[i]['content'], "label":items[i]['content']})
+
+					}
+					
+				}
+
+				// Setting radio group
+				// -------------------
+				item('#fitradio').options = fitoptions;
+				item('#stylingradio').options = styoptions;
+				item('#segmentsradio').options =  segoptions;
+
+				console.log('Inside set radio option..')
+				console.log([fitoptions, styoptions, segoptions])
+				console.log("----------------------------")
+
+		});
+
+		
+	});
+	
+
+}
+
+// 2.6 Fuction to toggle update switch
+// -----------------------------------
+function toggle(item) {
+
+	// Function to set item update params
+	// ----------------------------------
+	if (item('#newdesclabel').text === "" || item('#newheaderlabel').text === "" || String(item('#fitradio').selectedIndex) === "undefined" || String(item('#stylingradio').selectedIndex) === "undefined" || String(item('#segmentsradio').selectedIndex) === "undefined" ){
+		
+		item('#updateswitch').checked = false;
+		item('#statusbar').style.backgroundColor = red_color;
+		
+	} else {
+		
+		item('#updateswitch').checked = true;
+		item('#statusbar').style.backgroundColor = green_color;
+		
+	}
+}
+
+// 2.7 Function that would just concatenate selected options
+// ---------------------------------------------------------
+function concate(item){
+
+	var fitmessage = "nice fit";
+	var stylingmessage = "nice styling";
+	var segmentmessage = "nice segment";
+
+	// Concatenating fit message
+	// ------------------------
+	if (String(item('#fitradio').selectedIndex) === "undefined"){
+		
+		// do nothing
+
+	} else {
+
+		fitmessage = item('#fitradio').options[item('#fitradio').selectedIndex]["label"];
+
+	}
+
+	// Concatenating Styling message
+	// ------------------------------
+	if (String(item('#stylingradio').selectedIndex) === "undefined"){
+
+		// do nothing
+
+	} else {
+
+		stylingmessage = item('#stylingradio').options[item('#stylingradio').selectedIndex]["label"];
+		
+	}
+
+	// Concatenating Segment message
+	// ------------------------------
+	if (String(item('#segmentsradio').selectedIndex) === "undefined"){
+
+		// do nothing
+
+	} else {
+
+		segmentmessage = item('#segmentsradio').options[item('#segmentsradio').selectedIndex]["label"];
+		
+	}
+
+	// Setting header and description
+	// ------------------------------
+	item('#newheaderlabel').text = stylingmessage + " " + currentcatlabel;
+	item('#newdesclabel').text = "This block's fit is " + fitmessage + ". It has a " + stylingmessage + " styling. Segments are " + segmentmessage + ".";
+
+}
+
+// 2.8 Some functions to set the updateswtch to true
+// -----------------------------------------------------
+export function fitradio_change(event) {
+	//Add your code for this event here: 
+	toggle($w.at(event.context));
+
+	// Setting new header and descrition label
+	// ---------------------------------------
+	concate($w.at(event.context))
+
+}
+
+export function sleeveradio_change(event) {
+	//Add your code for this event here: 
+	toggle($w.at(event.context));
+
+	// Setting new header and descrition label
+	// ---------------------------------------
+	concate($w.at(event.context))
+
+}
+
+export function segmentsradio_change(event) {
+	//Add your code for this event here: 
+	toggle($w.at(event.context));
+
+	// Setting new header and descrition label
+	// ---------------------------------------
+	concate($w.at(event.context))
+
+}
+// -----------------------------------------------------
