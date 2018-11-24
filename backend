@@ -8,7 +8,6 @@ import { fetch } from 'wix-fetch';
 // -----------------------
 const baseURL = 'http://35.194.20.102:8000/';
 const api_key = 'k1ocCDmw7N2rG4qQdyEtVhHX9';
-export let main_task_id = 'PMTASK04';
 
 // Function to get taskstatus
 // --------------------------
@@ -296,6 +295,29 @@ export function geteverythingfortaskpage(user_id) {
 		.then(response => response.json())
 
 }
+
+// Function to update stylings API
+// -------------------------------
+export function updatestylingsapi(updated_records) {
+
+	const api_name = "updatemainstylingcsv"
+	const url = baseURL + api_name + "?api_key=" + api_key;
+	const headers_in = { "Content-Type": "application/json" };
+	const json_query = { "updated_records": updated_records };
+	const request_in = {
+		method: "POST",
+		headers: headers_in,
+		body: JSON.stringify(json_query)
+	};
+
+	console.log("inside local API function..");
+	console.log(JSON.stringify(json_query));
+
+	return fetch(url, request_in)
+		.then(response => response.json())
+
+}
+
 
 
 
