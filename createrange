@@ -684,34 +684,33 @@ export async function pickstylingsbutton_click(event) {
 export async function departmentdropdown_change(event, $w) {
 
 	// LOCAL Display settings ----------------------------------------------------
+	$w('#catdropdown').options = [];
 	$w('#catdropdown').disable();
 	$w('#stylingrepeater').collapse();
 	$w('#stylingrepeater').data = [];
+	$w('#stylingscounterlabel').text = "";
 	// LOCAL END OF DISPLAY SETTINGS -----------------------------------------------
 
 	// If statements
 	// -------------
 	if ($w('#depdropdown').value === "GL") {
 		$w('#catdropdown').options = cat_values_girls;
-		$w('#catdropdown').selectedIndex = 0;
-
+		
 	} else if ($w('#depdropdown').value === "BY") {
 		$w('#catdropdown').options = cat_values_boys;
-		$w('#catdropdown').selectedIndex = 0;
 
 	} else if ($w('#depdropdown').value === "WM") {
 		$w('#catdropdown').options = cat_values_women;
-		$w('#catdropdown').selectedIndex = 0;
 
 	} else if ($w('#depdropdown').value === "MN") {
 		$w('#catdropdown').options = cat_values_men;
-		$w('#catdropdown').selectedIndex = 0;
 
 	}
 
 	// Calling retrievestylings function
 	// ---------------------------------
-	await retrievestylings();
+	$w('#catdropdown').selectedIndex = undefined;
+	$w('#catdropdown').enable();
 
 }
 
@@ -1366,3 +1365,4 @@ export async function getprogressupdate(user_id, task_id){
 	
 
 }
+
