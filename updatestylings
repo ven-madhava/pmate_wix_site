@@ -1,6 +1,6 @@
 // For full API documentation, including code examples, visit http://wix.to/94BuAAs
 
-import { validateadminaccess, getallstylingsurl } from 'backend/aModule';
+import { getallstylingsurl, updatestylingsapi } from 'backend/aModule';
 import { dep_values, cat_values_girls, cat_values_boys, cat_values_women, cat_values_men, threshold_styling_select, max_themes_upload, min_themes_upload, main_base_url, threshold_pattern_select } from 'public/public_initials.js';
 import wixUsers from 'wix-users';
 import wixLocation from 'wix-location';
@@ -9,10 +9,37 @@ import wixLocation from 'wix-location';
 // ----------------------------------------
 var red_color = "#FF4040";
 var green_color = "#41BAAE";
+var blue_color = "#00A6FF";
 var updatecounter = 0;
+var styles_to_be_update = [];
 var currentcatlabel;
 
-// 1. Onready function
+// 1. Returning readable time function
+// ----------------------------------
+export function readabletime_timestamp(timestamp_in) {
+
+	var readable;
+	if (timestamp_in === "NA") {
+
+		readable = "Never updated";
+
+	} else {
+
+		// 1. Getting timestamp and Converting to integer
+		// ---------------------------------------------
+		timestamp_in = parseInt(String(timestamp_in), 10);
+		
+		// 2. Convertion
+		// -------------
+		var timeindate = new Date(timestamp_in);
+		readable = timeindate.toLocaleString();
+	}
+
+	return readable;
+
+}
+
+// 2. Onready function
 // --------------------
 $w.onReady(function () {
 
@@ -29,7 +56,6 @@ $w.onReady(function () {
 
 
 
-
 // XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 // 2. PICK STYLINGS FUNCTIONS
 
@@ -40,6 +66,7 @@ export async function depdropdown_change(event) {
 	
 
 	// LOCAL Display settings ----------------------------------------------------
+	$w('#catdropdown').options = [];
 	$w('#catdropdown').disable();
 	$w('#updatedetails').disable();
 	$w('#stylingrepeater').collapse();
@@ -50,28 +77,22 @@ export async function depdropdown_change(event) {
 	// -------------
 	if ($w('#depdropdown').value === "GL") {
 		$w('#catdropdown').options = cat_values_girls;
-		$w('#catdropdown').selectedIndex = 0;
-		currentcatlabel = cat_values_girls[0]["label"];
 
 	} else if ($w('#depdropdown').value === "BY") {
 		$w('#catdropdown').options = cat_values_boys;
-		$w('#catdropdown').selectedIndex = 0;
-		currentcatlabel = cat_values_boys[0]["label"];
 
 	} else if ($w('#depdropdown').value === "WM") {
 		$w('#catdropdown').options = cat_values_women;
-		$w('#catdropdown').selectedIndex = 0;
-		currentcatlabel = cat_values_women[0]["label"];
 
 	} else if ($w('#depdropdown').value === "MN") {
 		$w('#catdropdown').options = cat_values_men;
-		$w('#catdropdown').selectedIndex = 0;
-		currentcatlabel = cat_values_men[0]["label"];
 	}
 	
 	// Calling retrievestylings function
 	// ---------------------------------
-	await retrievestylings();
+	$w('#stylingscounterlabel').text = "";
+	$w('#catdropdown').selectedIndex = undefined;
+	$w('#catdropdown').enable();
 }
 
 
@@ -99,7 +120,9 @@ export async function retrievestylings() {
 	$w('#stylingrepeater').data = [];
 	$w('#catdropdown').disable();
 	$w('#depdropdown').disable();
+	$w('#updatedetails').label = "Update";
 	$w('#updatedetails').disable();
+	
 
 	let items = [];
 	var cat = $w('#catdropdown').value;
@@ -117,20 +140,34 @@ export async function retrievestylings() {
 	// -----------------------------------------------------------------
 	for (var key in line_urls) {
 
-		items.push({ "name": line_urls[key]["img_name"], "cat": cat, "lm_src": line_urls[key]["img_url"], "sm_src": line_urls[key]["img_url"].replace("linemarkings","segments"), "header": line_urls[key]["img_header"], "description": line_urls[key]["img_desc"], "_id": key });
+		items.push({ "name": line_urls[key]["img_name"], "cat": cat, "lm_src": line_urls[key]["img_url"], "sm_src": line_urls[key]["img_url"].replace("linemarkings","segments"), "header": line_urls[key]["img_header"], "description": line_urls[key]["img_desc"], "timestamp_in": line_urls[key]["img_timestamp"], "_id": key });
 	}
 
 	// Setting repeater data
 	// ----------------------
 	$w('#stylingrepeater').onItemReady( ($item, itemData, index) => {
+		
+		$item("#imagename").text = itemData.name + " / Last Updated: " + readabletime_timestamp(itemData.timestamp_in) + "."
+		$item("#imgnameonly").text = itemData.name
 		$item("#linemarkingimage").src = itemData.lm_src;
 		$item("#segmentimage").src = itemData.sm_src;
 		$item("#oldheaderlabel").text = itemData.header;
 		$item("#olddesclabel").text = itemData.description;
-		$item("#statusbar").style.backgroundColor = red_color;
-		$item("#newheaderlabel").text = "header not set";
-		$item("#newdesclabel").text = "description not set";
+		$item("#newheaderlabel").text = "New header will display here..";
+		$item("#newdesclabel").text = "New description will display here..";
+
+		// Setting statu bar color
+		// -----------------------
+		if (readabletime_timestamp(itemData.timestamp_in) ===  "Never updated") {
+			
+			$item("#statusbar").style.backgroundColor = red_color;
 		
+		} else {
+		
+			$item("#statusbar").style.backgroundColor = blue_color;
+
+		}
+
 		// Setting radio group options
 		// ---------------------------
 		$item("#fitradio").options = [];
@@ -206,7 +243,7 @@ export function setradiogroups(cat, item){
 
 		// girls and womens woven  dresses
 		// --------------------------------
-		setradiooptions("020", item);
+		setradiooptions("200", item);
 		
 		
 	} else if (cat === 1 || cat === 21) {
@@ -349,13 +386,21 @@ function toggle(item) {
 	// ----------------------------------
 	if (item('#newdesclabel').text === "" || item('#newheaderlabel').text === "" || String(item('#fitradio').selectedIndex) === "undefined" || String(item('#stylingradio').selectedIndex) === "undefined" || String(item('#segmentsradio').selectedIndex) === "undefined" ){
 		
-		item('#updateswitch').checked = false;
+		// Do nothing
+		// ----------
 		item('#statusbar').style.backgroundColor = red_color;
 		
 	} else {
 		
-		item('#updateswitch').checked = true;
+		// Update main styles array
+		// ------------------------
+		if (styles_to_be_update.indexOf(item('#imgnameonly').text) < 0){
+
+			styles_to_be_update.push(item('#imgnameonly').text);
+
+		}
 		item('#statusbar').style.backgroundColor = green_color;
+		$w("#stylingscounterlabel").text = String(styles_to_be_update.length) + " blocks selected for updation.";
 		
 	}
 }
@@ -406,8 +451,8 @@ function concate(item){
 
 	// Setting header and description
 	// ------------------------------
-	item('#newheaderlabel').text = stylingmessage + " " + currentcatlabel;
-	item('#newdesclabel').text = "This block's fit is " + fitmessage + ". It has a " + stylingmessage + " styling. Segments are " + segmentmessage + ".";
+	item('#newheaderlabel').text = stylingmessage.toUpperCase() + " " + currentcatlabel.toUpperCase();
+	item('#newdesclabel').text = "This is a " + fitmessage + " fit " + stylingmessage + " styling block with " + segmentmessage + ".";
 
 }
 
@@ -443,3 +488,77 @@ export function segmentsradio_change(event) {
 
 }
 // -----------------------------------------------------
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// 3. PICK STYLINGS FUNCTIONS
+
+// 3.1 Update stylng details button
+// --------------------------------
+export async function updatedetails_click(event) {
+	
+	// Initiasing API array
+	// --------------------
+	var update_array = {};
+	var imgname;
+	var header;
+	var desc;
+	var t_date = new Date();
+	var timestamp_out = t_date.getTime();
+
+	// Disabling updte button
+	// ----------------------
+	$w('#updatedetails').label = "Working..";
+	$w('#updatedetails').disable();
+	$w('#stylingrepeater').collapse();
+	$w("#stylingscounterlabel").text = "Sending updates to server..";
+
+
+	// We will go through repeart items and collect an array of value based on switch
+	// ------------------------------------------------------------------------------
+	$w("#stylingrepeater").forEachItem( ($item, itemData, index) => {
+		
+		// Check if swich on or off
+		// ------------------------
+		if (styles_to_be_update.indexOf($item("#imgnameonly").text) >= 0){
+
+			imgname = $item("#imgnameonly").text
+			header = $item("#newheaderlabel").text
+			desc = $item("#newdesclabel").text
+
+			// Add items data to array
+			// -----------------------
+			update_array [imgname] = {};
+			update_array [imgname] ["name"] = imgname;
+			update_array [imgname] ["header"] = header.toUpperCase();
+			update_array [imgname] ["description"] = desc;
+			update_array [imgname] ["timestamp"] = timestamp_out;
+
+
+		}
+
+	});
+	
+	// Now to make the API call
+	// ------------------------
+	let url_response = await updatestylingsapi(update_array);
+	if (url_response.includes("Updated")){
+
+		// Update ok
+		// ---------
+		$w("#stylingscounterlabel").text = "Done. " + url_response + " Stylings blocks will reload automatically."
+		setTimeout( () => {
+
+			retrievestylings();
+
+		}, 4000);
+		
+	} else {
+
+		$w('#updatedetails').label = "Update";
+		$w('#updatedetails').enable();
+		$w("#stylingscounterlabel").text = "Sorry something went wrong, try again later."
+
+	}
+
+
+}
