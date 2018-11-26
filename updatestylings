@@ -452,7 +452,8 @@ function concate(item){
 	// Setting header and description
 	// ------------------------------
 	item('#newheaderlabel').text = stylingmessage.toUpperCase() + " " + currentcatlabel.toUpperCase();
-	item('#newdesclabel').text = "This is a " + fitmessage + " fit " + stylingmessage + " styling block with " + segmentmessage + ".";
+	var display_text = fitmessage + " fit " + stylingmessage + " style with " + segmentmessage + ".";
+	item('#newdesclabel').text = display_text[0].toUpperCase() + display_text.substring(1, display_text.length);
 
 }
 
