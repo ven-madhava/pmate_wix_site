@@ -156,7 +156,7 @@ export async function settaskrepeateritemssingeshot(){
 
 						// Taskfile button
 						// ---------------
-						if (itemData.taskfile_url === "Invalid URL"){
+						if (itemData.taskfile_url === "0"){
 							$item("#downloadtaskfiles").disable();
 						} else {
 							$item("#downloadtaskfiles").link = itemData.taskfile_url;
@@ -166,7 +166,7 @@ export async function settaskrepeateritemssingeshot(){
 
 						// Range URLS button enabling / disabling
 						// --------------------------------------
-						if (itemData.range_urls === "NO RANGES FOUND"){
+						if (itemData.range_urls === "0"){
 							$item("#showrangeboards").disable();
 						} else {
 							$item("#showrangeboards").enable();
@@ -196,6 +196,13 @@ export async function settaskrepeateritemssingeshot(){
 // 2. Function to return final message for master status
 // -----------------------------------------------------
 export function returnmasterstatus(new_pats, prep_styling, create_textures) {
+
+	
+	// Sanity
+	// -------
+	new_pats = parseInt(new_pats, 10);
+	prep_styling = parseInt(prep_styling, 10);
+	create_textures = parseInt(create_textures, 10);
 
 	var output = [];
 	var pending = "Pending";
