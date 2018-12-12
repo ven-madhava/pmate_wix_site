@@ -6,6 +6,7 @@ import { getprogress, getrangepdf, getrangepdfurl, gettaskstatus, getallpatterns
 import { dep_values, cat_values_girls, cat_values_boys, cat_values_women, cat_values_men, threshold_styling_select, max_themes_upload, min_themes_upload, main_base_url, threshold_pattern_select } from 'public/public_initials.js';
 import wixUsers from 'wix-users';
 import wixLocation from 'wix-location';
+import wixWindow from 'wix-window';
 
 
 // Declarations for the page
@@ -21,6 +22,8 @@ var selected_patterns_main = [];
 var progresstimerid;
 var gentimerid;
 var patternsselectedcounter = 0;
+var userdevice;
+
 
 // 0.1 Function to convert array to comma string for API
 // -----------------------------------------------------
@@ -447,6 +450,10 @@ $w.onReady(async function () {
 			// 1. Setting main user ID
 			// -----------------------
 			main_user_id = user;
+
+			// 1.1 Getting and setting user device
+			// -----------------------------------
+			userdevice = wixWindow.formFactor;
 			
 
 			// 2. Fixed setting displays
@@ -507,8 +514,8 @@ export async function selectfile_change(event) {
 		// Ensuring there is a files
 		// -------------------------
 		let sizes = files[0].size;
-
-		if (uploadcounter <= max_themes_upload) {
+		
+		if ( uploadcounter < max_themes_upload ) {
 
 			// Disabling button while ops running
 			// ----------------------------------
@@ -550,12 +557,13 @@ export async function selectfile_change(event) {
 
 			// Updating upload counter
 			// -----------------------
-			uploadcounter = uploadcounter + 1
+			uploadcounter = uploadcounter + 1;
 
 			// Updating uploadfile text
 			// ------------------------
 			uploads_left = max_themes_upload - uploadcounter;
-			$w('#uploadfiletext').text = uploads_left + " more inspiration images can be uploaded for this range."
+			$w('#uploadfiletext').text = uploads_left + " more inspiration image(s) can be uploaded for this range."
+			
 			// Enabling create task button!
 			// ----------------------------
 			if (uploadcounter >= min_themes_upload) {
@@ -564,6 +572,18 @@ export async function selectfile_change(event) {
 				// -------------------------
 				$w('#pickstylingsbutton').enable();
 			}
+
+			// Disabling select file
+			// ---------------------
+			if (uploadcounter === max_themes_upload) {
+
+				// Enable create task button
+				// -------------------------
+				$w('#selectfile').disable();
+				$w('#uploadfiletext').text = "No more uploads possible. We are limiting to " + String(max_themes_upload) + " inspiration images per range for beta.";
+			}
+
+			
 
 		} else {
 
@@ -588,6 +608,7 @@ export async function pickstylingsbutton_click(event) {
 	// 0. First upload theme images to GCS
 	// -----------------------------------
 	$w('#pickstylingsbutton').disable();
+	$w('#selectfile').disable();
 	$w('#pickstylingsbutton').label = "Working.."
 	for (var i in to_be_uploaded_local_urls) {
 
@@ -689,6 +710,8 @@ export async function departmentdropdown_change(event, $w) {
 	$w('#stylingrepeater').collapse();
 	$w('#stylingrepeater').data = [];
 	$w('#stylingscounterlabel').text = "";
+	$w('#stylingblockmobilebox').collapse();
+
 	// LOCAL END OF DISPLAY SETTINGS -----------------------------------------------
 
 	// If statements
@@ -736,6 +759,7 @@ export async function retrievestylings() {
 	$w('#catdropdown').disable();
 	$w('#depdropdown').disable();
 	$w('#uploadstylingsbutton').collapse();
+	$w('#stylingblockmobilebox').collapse();
 
 	let items = [];
 	var cat = $w('#catdropdown').value;
@@ -767,7 +791,32 @@ export async function retrievestylings() {
 
 	// Enabling repeater
 	// -----------------
-	$w('#stylingrepeater').data = items;
+	// Checking userdevice
+	// -------------------
+	var temlen;
+	if (userdevice.toLowerCase().includes("mobile")) {
+
+		$w('#stylingblockmobilebox').expand();
+		$w('#stylingrepeater').data = items.slice(0,50);
+
+		if (items.length === items.slice(0,50).length ){
+			$w('#stylingmobiletext').text = "Showing " + String(items.slice(0,50).length) + " options. Switch to desktop for a seamless experience.";
+		} else {
+			$w('#stylingmobiletext').text = "Showing only " + String(items.slice(0,50).length) + " of " + String(items.length) + " options to be mindful of your phone's memory. Switch to desktop for a seamless experience.";
+		}
+
+		// For loading counter text
+		// ------------------------
+		temlen = items.slice(0,50).length;
+
+	} else {
+		
+		$w('#stylingblockmobilebox').collapse();
+		$w('#stylingrepeater').data = items;
+		temlen = items.length;
+
+	}
+	
 	$w('#stylingrepeater').expand();
 	$w('#catdropdown').enable();
 	$w('#depdropdown').enable();
@@ -789,13 +838,13 @@ export async function retrievestylings() {
 		// --------------------
 		$w('#uploadstylingsbutton').expand();
 		$w('#uploadstylingsbutton').enable();
-		$w('#stylingscounterlabel').text = String(items.length) +  " styling blocks loaded. " + String(selected_stylings_main.length) + " styling block(s) selected. You can now submit your selection."
+		$w('#stylingscounterlabel').text = String(temlen) +  " styling blocks loaded. " + String(selected_stylings_main.length) + " styling block(s) selected. You can now submit your selection."
 
 	} else {
 		// Disable upload button
 		// --------------------
 		$w('#uploadstylingsbutton').disable();
-		$w('#stylingscounterlabel').text = String(items.length) + " styling blocks loaded. " + String(selected_stylings_main.length) + " styling block(s) selected. Minimum required: " + String(threshold_styling_select) + "."
+		$w('#stylingscounterlabel').text = String(temlen) + " styling blocks loaded. " + String(selected_stylings_main.length) + " styling block(s) selected. Minimum required: " + String(threshold_styling_select) + "."
 	}
 
 }
@@ -904,7 +953,7 @@ export async function load_all_patterns(user_id, task_id) {
 
 	// Some sanity clean ups
 	// ---------------------
-	$w('#pickedpatternscounterlabel').text = "Loading swatches..";
+	$w('#pickedpatternscounterlabel').text = "Contacting Protomate for swatches..";
 	$w('#allpatternsrepeater').collapse();
 	$w('#allpatternsrepeater').data = [];
 	$w('#createtexturesbutton').disable();
@@ -933,9 +982,34 @@ export async function load_all_patterns(user_id, task_id) {
 	// -----------------
 	$w('#pickedpatternscounterlabel').text = "Loading swatches..";
 	$w('#loadingwaitbox').expand();
-	$w('#allpatternsrepeater').data = items;
+	// Checking userdevice
+	// -------------------
+	var temlen;
+	if (userdevice.toLowerCase().includes("mobile")) {
+
+		$w('#swatchesmobilebox').expand();
+		$w('#allpatternsrepeater').data = items.slice(0,50);
+
+		if (items.length === items.slice(0,50).length ){
+			$w('#swatchesmobiletext').text = "Showing " + String(items.slice(0,50).length) + " options. Switch to desktop for a seamless experience.";
+		} else {
+			$w('#swatchesmobiletext').text = "Showing only " + String(items.slice(0,50).length) + " of " + String(items.length) + " options to be mindful of your phone's memory. Switch to desktop for a seamless experience.";
+		}
+
+		// For loading counter text
+		// ------------------------
+		temlen = items.slice(0,50).length;
+
+	} else {
+		
+		$w('#swatchesmobilebox').collapse();
+		$w('#allpatternsrepeater').data = items;
+		temlen = items.length;
+
+	}
+	
 	$w('#allpatternsrepeater').expand();
-	$w('#pickedpatternscounterlabel').text = String(items.length) + " swatches loaded. Start selecting!";
+	$w('#pickedpatternscounterlabel').text = String(temlen) + " swatches loaded. Start selecting!";
 
 	// Using setouttime to show loading
 	// --------------------------------
