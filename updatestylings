@@ -13,6 +13,7 @@ var blue_color = "#00A6FF";
 var updatecounter = 0;
 var styles_to_be_update = [];
 var currentcatlabel;
+var no_stylings_pending = 0;
 
 // 1. Returning readable time function
 // ----------------------------------
@@ -103,7 +104,15 @@ export async function catdropdown_change(event) {
 
 	// Just call get stylings API
 	// -------------------------
-	await retrievestylings();
+	// LOCAL Display settings
+	// ------------------------
+	$w('#stylingrepeater').collapse();
+	$w('#stylingrepeater').data = [];
+	$w('#catdropdown').disable();
+	$w('#depdropdown').disable();
+	$w('#updatedetails').label = "Update";
+	$w('#updatedetails').disable();
+	retrievestylings();
 
 
 
@@ -122,6 +131,7 @@ export async function retrievestylings() {
 	$w('#depdropdown').disable();
 	$w('#updatedetails').label = "Update";
 	$w('#updatedetails').disable();
+	no_stylings_pending = 0;
 	
 
 	let items = [];
@@ -161,10 +171,16 @@ export async function retrievestylings() {
 		if (readabletime_timestamp(itemData.timestamp_in) ===  "Never updated") {
 			
 			$item("#statusbar").style.backgroundColor = red_color;
+
 		
 		} else {
 		
 			$item("#statusbar").style.backgroundColor = blue_color;
+			if (itemData.header === "New header will display here.." || itemData.description === "New description will display here.." ){
+
+				$item("#statusbar").style.backgroundColor = red_color;
+
+			}
 
 		}
 
@@ -183,7 +199,19 @@ export async function retrievestylings() {
 	$w('#stylingrepeater').expand();
 	$w('#catdropdown').enable();
 	$w('#depdropdown').enable();
-	$w('#stylingscounterlabel').text = String(items.length) + " styling blocks loaded. Start editing."
+
+	// Setting peding counter
+	// ----------------------
+	$w("#stylingrepeater").forEachItem( ($item, itemData, index) => {
+	
+		if (readabletime_timestamp(itemData.timestamp_in) ===  "Never updated" || itemData.header === "New header will display here.." || itemData.description === "New description will display here.." ){
+
+			no_stylings_pending += 1;
+
+		}
+		});
+
+	$w('#stylingscounterlabel').text = String(items.length) + " styling blocks loaded. " + String(no_stylings_pending) + " stylings are pending. Start editing."
 	$w('#updatedetails').enable();
 
 }
@@ -280,12 +308,12 @@ export function setradiogroups(cat, item){
 
 		// girls and womens knit jumpers
 		// -----------------------------
-		setradiooptions("626", item);
+		setradiooptions("525", item);
 		
 	} else if (cat === 7 || cat === 27) {
 
-		// girls and womens woven pants and capri
-		// --------------------------------------
+		// girls and womens woven pants and capri & girls and womens denim
+		// --------------------------------------------------------------
 		setradiooptions("727", item);
 		
 	} else if (cat === 8 || cat === 28) {
@@ -312,11 +340,23 @@ export function setradiogroups(cat, item){
 		// ----------------------------
 		setradiooptions("1131", item);
 		
-	} else if (cat === 12 || cat === 32) {
+	} else if (cat === 12 || cat === 32 ) {
 
 		// girls and womens woven skirts and skorts
 		// ----------------------------------------
 		setradiooptions("1232", item);
+		
+	} else if (cat === 41 || cat === 61) {
+
+		// girls and womens knit skirts and skorts
+		// ----------------------------------------
+		setradiooptions("1232", item);
+		
+	} else if (cat === 40 || cat === 60) {
+
+		// girls and womens knit jeans
+		// ----------------------------
+		setradiooptions("4060", item);
 		
 	}
 
@@ -400,7 +440,7 @@ function toggle(item) {
 
 		}
 		item('#statusbar').style.backgroundColor = green_color;
-		$w("#stylingscounterlabel").text = String(styles_to_be_update.length) + " blocks selected for updation.";
+		$w("#stylingscounterlabel").text = String(styles_to_be_update.length) + " blocks selected for updation. Total pending excluding current update session is " + String(no_stylings_pending) + ".";
 		
 	}
 }
