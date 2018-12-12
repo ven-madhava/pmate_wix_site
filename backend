@@ -3,11 +3,13 @@
 // Imports
 // -------
 import { fetch } from 'wix-fetch';
+import { main_base_url } from 'public/public_initials.js';
+
 
 // Project initialisations
 // -----------------------
 const baseURL = 'http://35.194.20.102:8000/';
-const api_key = 'k1ocCDmw7N2rG4qQdyEtVhHX9';
+const api_key = 'AwrsQHzdomxLFYh7iJXn0tGEq';
 
 // Function to get taskstatus
 // --------------------------
@@ -279,9 +281,9 @@ export function gettaskfileboardurl(user_id, task_id) {
 
 // Function to get everthing for task page
 // ---------------------------------------
-export function geteverythingfortaskpage(user_id) {
+export function geteverythingfortaskpage_csv(user_id) {
 
-	const api_name = "geteverythingfortasks"
+	const api_name = "geteverythingfortaskscsv"
 	const url = baseURL + api_name + "?api_key=" + api_key;
 	const headers_in = { "Content-Type": "application/json" };
 	const json_query = { "user_id": user_id };
@@ -317,7 +319,6 @@ export function updatestylingsapi(updated_records) {
 		.then(response => response.json())
 
 }
-
 
 
 
