@@ -2,7 +2,7 @@
 
 // imports
 // -------
-import { geteverythingfortaskpage, getallrangeboardsurl } from 'backend/aModule';
+import { geteverythingfortaskpage_csv, getallrangeboardsurl } from 'backend/aModule';
 import { main_base_url } from 'public/public_initials.js';
 import wixUsers from 'wix-users';
 import wixLocation from 'wix-location';
@@ -66,10 +66,11 @@ export async function settaskrepeateritemssingeshot(){
 	$w('#listtasksrepeater').collapse();
 	$w('#listtasksrepeater').data = [];
 	var items = [];
-	$w('#alerttext').text += "Calling geteverything API.."
+	$w('#alerttext').text += "Calling geteverything API.." + String(main_user_id)
 	
 	//var url_reponse = await geteverythingfortaskpage(main_user_id);
-	geteverythingfortaskpage(main_user_id)
+
+	geteverythingfortaskpage_csv(main_user_id)
 		.then( function(url_reponse) {
 
 				// function start
@@ -99,7 +100,28 @@ export async function settaskrepeateritemssingeshot(){
 
 					// Setting label
 					// -------------
-					$w('#mytasksheadertext').text = "You have " + String(sort_keys.length) + " ranges!"
+					var rangeword;
+					if (sort_keys.length > 1){
+						rangeword = " ranges."
+					} else {
+						rangeword = " range."
+					}
+
+					// Guest mode message
+					// ------------------
+					if ( String(main_user_id).includes("guest@geospot.in")){
+
+						$w('#mytasksheadertext').text = "Feel free to explore these sample ranges built on Protomate!";
+						$w('#text24').text = "Play around with ranges below or create a new range to see how Protomate works."
+
+
+					} else {
+
+						$w('#mytasksheadertext').text = "You have " + String(sort_keys.length) + rangeword;
+						$w('#text24').text = "Showing all your ranges created so far on Protomate."
+
+					}
+					
 					$w('#alerttext').text += "Setting items array.."
 
 					// Tasks were found and we need to set repeater items
