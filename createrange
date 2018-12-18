@@ -7,6 +7,8 @@ import { dep_values, cat_values_girls, cat_values_boys, cat_values_women, cat_va
 import wixUsers from 'wix-users';
 import wixLocation from 'wix-location';
 import wixWindow from 'wix-window';
+import {session} from 'wix-storage';
+import {local} from 'wix-storage';
 
 
 // Declarations for the page
@@ -22,7 +24,133 @@ var selected_patterns_main = [];
 var progresstimerid;
 var gentimerid;
 var patternsselectedcounter = 0;
+
+// Variables needed for reporting
+// ------------------------------
 var userdevice;
+var pmate_userid;
+var pmate_sessionid;
+var pmate_startsession;
+var pmate_usertype;
+
+// Variables for pagination
+// -------------------------
+var total_options;
+var no_pages;
+var fixed_display = 50;
+var start_ind;
+var end_ind;
+
+// Global items page
+// -----------------
+var global_swatch_items = [];
+var global_styling_items = [];
+
+// 0.-3 Function that sets repeater data after pagintion change
+// ------------------------------------------------------------
+
+// 0.-2 Function that sets pagination bar
+// --------------------------------------
+function setpagination(total_items, $item){
+
+	// No pages
+	// --------
+	no_pages = Math.floor(total_items/fixed_display);
+
+	// If there is a remiander
+	// ----------------------
+	if ((total_items % fixed_display) > 0){
+		no_pages += 1;
+	}
+
+	$item.totalPages = no_pages;
+	$item.currentPage = 1;
+	$item.expand();
+	$item.enable();
+
+	// Setting start_ind and end_in
+	// ----------------------------
+	start_ind = 0;
+	if (start_ind + fixed_display < total_items){
+		end_ind = start_ind + fixed_display;
+	} else {
+		end_ind = total_items;
+	}
+	
+}
+
+// 0.-1 Function to provide current timestamp as string
+// ---------------------------------------------------
+export function providetimestamp(){
+
+	var t_date_p = new Date();
+	var t_time_p = t_date_p.getTime();
+	return String(t_time_p);
+
+}
+
+// 0.0 Function to provide current timestamp as string
+// ---------------------------------------------------
+export function timeelapsed(session_id) {
+
+	// Getting timestamp and Converting to integer
+	// -------------------------------------------
+	var sess_timestamp = parseInt(session_id.replace("pmatesession_",""), 10); // in millisecs
+	var curr_timestamp = parseInt(providetimestamp(), 10); // millisecs
+	var diff_secs = (curr_timestamp - sess_timestamp)/1000;
+	return String(Math.round(diff_secs));
+
+}
+
+// 0.0 Function to set user device, session and local variables
+// ------------------------------------------------------------
+export function setusersessiondevice(){
+
+	// 1. Getting userdevice
+	// ----------------------
+	userdevice = wixWindow.formFactor;
+
+	// 2. Setting local & session data
+	// --------------------------------
+	pmate_userid = local.getItem("pmate_user_id"); 
+	pmate_sessionid = session.getItem("pmate_session_id");
+
+	// 2.1 local data
+	// --------------
+	if (String(pmate_userid).toLowerCase().includes("null")){
+
+		// New user. need to set local
+		// ---------------------------
+		console.log("New user..")
+		pmate_usertype = "new_user";
+		pmate_userid = "pmateuser_" + String(providetimestamp());
+		local.setItem("pmate_user_id", pmate_userid);
+		
+	} else {
+
+		pmate_usertype = "returning_user";
+	}
+
+	// 2.2 session data
+	// ----------------
+	if (String(pmate_sessionid).toLowerCase().includes("null")){
+
+		// New session. need to set session
+		// ---------------------------------
+		console.log("New session..")
+		pmate_sessionid = "pmatesession_" + String(providetimestamp());
+		session.setItem("pmate_session_id", pmate_sessionid);
+	
+
+	}
+
+	console.log('Finished setting reporting params..');
+	console.log(userdevice);
+	console.log(pmate_userid);
+	console.log(pmate_sessionid);
+	
+	
+}
 
 
 // 0.1 Function to convert array to comma string for API
@@ -157,6 +285,8 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		$w('#aiinitialisedbox').expand();
 		$w('#aiinitialisedheader').text = "AI Initialised"
 		$w('#aiinitialisedpara').text = "We have initialised our AI and training it based on your inputs. This may take a few minutes.";
+
+		
 		// Calling progress function
 		// -------------------------
 		progresstimerid = setInterval(getprogressupdate, 2000, main_user_id, main_task_id);
@@ -170,6 +300,11 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		// 6. Collapsing loading wait box
 		// ----------------------------
 		$w('#loadingwaitbox').collapse();
+
+		// 7. Loading feedback lightbox
+		// ----------------------------
+		setTimeout(()=>{wixWindow.openLightbox("feedbacklightbox");},6000);
+		
 
 		// END OF DISPLAY SETTINGS -----------------------------------------------
 
@@ -293,6 +428,11 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		// ----------------------------
 		$w('#loadingwaitbox').collapse();
 
+		// 7. Loading feedback lightbox
+		// ----------------------------
+		setTimeout(()=>{wixWindow.openLightbox("feedbacklightbox");},6000);
+		
+
 		// END OF DISPLAY SETTINGS -----------------------------------------------
 
 	} else if (status_newpats > 1 && status_prepstyles > 1 && status_createtextures > 1) {
@@ -354,6 +494,11 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 		// 6. Collapsing loading wait box
 		// ----------------------------
 		$w('#loadingwaitbox').collapse();
+
+		// 7. Loading feedback lightbox
+		// ----------------------------
+		setTimeout(()=>{wixWindow.openLightbox("feedbacklightbox");},10000);
+		
 
 		// END OF DISPLAY SETTINGS -----------------------------------------------
 
@@ -438,9 +583,17 @@ export async function setdisplay(status_newpats, status_prepstyles, status_creat
 // -------------------------------------------------------------
 $w.onReady(async function () {
 
+	
+
 	// Setting display to loading
 	// --------------------------
 	$w('#loadingwaitbox').expand();
+
+	// Setting user data
+	// -----------------
+	setusersessiondevice();
+
+	
 
 	// 1. Get the userid -- this page is always visible only after a user is logged in
 	// -------------------------------------------------------------------------------
@@ -454,6 +607,14 @@ $w.onReady(async function () {
 			// 1.1 Getting and setting user device
 			// -----------------------------------
 			userdevice = wixWindow.formFactor;
+			
+			// Setting fixed display for options
+			// ---------------------------------
+			if (userdevice.toLowerCase().includes("mobile")) {
+
+				fixed_display = 24;
+			
+			}
 			
 
 			// 2. Fixed setting displays
@@ -491,6 +652,100 @@ $w.onReady(async function () {
 			}
 		});
 	
+	
+	// Setting swatchpagination bar change event
+	// -----------------------------------------
+	$w("#swatchpagination").onChange( (event) => {
+  
+		// Setting starting and ending indices
+		// -----------------------------------
+		var curr_page = $w('#swatchpagination').currentPage;
+
+		// Setting starting and ending
+		// ---------------------------
+		start_ind = (curr_page - 1) * fixed_display;
+
+		// Setting end ind
+		// ---------------
+		if (start_ind + fixed_display < total_options){
+			end_ind = start_ind + fixed_display;
+		} else {
+			end_ind = total_options;
+		}
+
+		// Setting repeater items as well
+		// ------------------------------
+		$w('#allpatternsrepeater').data = [];
+		$w('#allpatternsrepeater').collapse();
+		$w('#allpatternsrepeater').data = global_swatch_items.slice(start_ind, end_ind);
+		$w('#allpatternsrepeater').expand();
+		setTimeout(()=>{$w('#loadingwaitbox').collapse();},2000);
+
+		// Remembering and setting check box value from users selection
+		// ------------------------------------------------------------
+		$w('#allpatternsrepeater').forEachItem(($item, itemData, index) => {
+			var curr_value = $item("#selectpatternchkbox").value;
+			var curr_value_index = selected_patterns_main.indexOf(curr_value);
+			if (curr_value_index < 0) {
+				$item("#selectpatternchkbox").checked = false;
+			} else {
+				$item("#selectpatternchkbox").checked = true;
+			}
+		});
+
+		// Setting display text
+		// --------------------
+		$w('#pickedpatternscounterlabel').text = String(selected_patterns_main.length) + " swatche(s) selected. Showing " + String(start_ind) + " to " + String(end_ind) + " of a total " + String(global_swatch_items.length) + " swatches.";
+		
+
+	});
+
+	// Setting stylingpagination bar change event
+	// -----------------------------------------
+	$w("#stylingpagination").onChange( (event) => {
+  
+		// Setting starting and ending indices
+		// -----------------------------------
+		var curr_page = $w('#stylingpagination').currentPage;
+
+		// Setting starting and ending
+		// ---------------------------
+		start_ind = (curr_page - 1) * fixed_display;
+
+		// Setting end ind
+		// ---------------
+		if (start_ind + fixed_display < total_options){
+			end_ind = start_ind + fixed_display;
+		} else {
+			end_ind = total_options;
+		}
+
+		// Setting repeater items as well
+		// ------------------------------
+		$w('#stylingrepeater').data = [];
+		$w('#stylingrepeater').collapse();
+		$w('#stylingrepeater').data = global_styling_items.slice(start_ind, end_ind);
+		$w('#stylingrepeater').expand();
+		setTimeout(()=>{$w('#loadingwaitbox').collapse();},2000);
+
+		// Remembering and setting check box value from users selection
+		// ------------------------------------------------------------
+		$w('#stylingrepeater').forEachItem(($item, itemData, index) => {
+			var curr_value = $item("#stylingcheckbox").value;
+			var curr_value_index = selected_stylings_main.indexOf(curr_value);
+			if (curr_value_index < 0) {
+				$item("#stylingcheckbox").checked = false;
+			} else {
+				$item("#stylingcheckbox").checked = true;
+			}
+		});
+
+		// Setting display text
+		// --------------------
+		$w('#stylingscounterlabel').text = String(selected_stylings_main.length) + " styling block(s) selected. Showing " + String(start_ind) + " to " + String(end_ind) + " of a total " + String(global_styling_items.length) + " blocks.";
+		
+
+	});
 
 });
 
@@ -619,7 +874,7 @@ export async function pickstylingsbutton_click(event) {
 
 	// 1. Calling ven new patterns API
 	// -------------------------------
-	createnewpatterns(main_user_id, main_task_id)
+	createnewpatterns(main_user_id, main_task_id, userdevice, pmate_userid, pmate_sessionid, pmate_usertype, String(timeelapsed(pmate_sessionid)))
 		.then( function(url_response) {
 
 			if (url_response === "Thread started") {
@@ -710,7 +965,8 @@ export async function departmentdropdown_change(event, $w) {
 	$w('#stylingrepeater').collapse();
 	$w('#stylingrepeater').data = [];
 	$w('#stylingscounterlabel').text = "";
-	$w('#stylingblockmobilebox').collapse();
+	$w('#stylingpagination').collapse();
+
 
 	// LOCAL END OF DISPLAY SETTINGS -----------------------------------------------
 
@@ -753,13 +1009,14 @@ export async function catdropdown_change(event, $w) {
 export async function retrievestylings() {
 
 	// LOCAL Display settings
-	// ------------------------
+	// ----------------------
 	$w('#stylingrepeater').collapse();
 	$w('#stylingrepeater').data = [];
 	$w('#catdropdown').disable();
 	$w('#depdropdown').disable();
 	$w('#uploadstylingsbutton').collapse();
-	$w('#stylingblockmobilebox').collapse();
+	$w('#stylingpagination').collapse();
+	fixed_display = 16; // setting this for styling only.
 
 	let items = [];
 	var cat = $w('#catdropdown').value;
@@ -789,37 +1046,21 @@ export async function retrievestylings() {
 		
 	});
 
-	// Enabling repeater
-	// -----------------
-	// Checking userdevice
-	// -------------------
-	var temlen;
-	if (userdevice.toLowerCase().includes("mobile")) {
-
-		$w('#stylingblockmobilebox').expand();
-		$w('#stylingrepeater').data = items.slice(0,50);
-
-		if (items.length === items.slice(0,50).length ){
-			$w('#stylingmobiletext').text = "Showing " + String(items.slice(0,50).length) + " options. Switch to desktop for a seamless experience.";
-		} else {
-			$w('#stylingmobiletext').text = "Showing only " + String(items.slice(0,50).length) + " of " + String(items.length) + " options to be mindful of your phone's memory. Switch to desktop for a seamless experience.";
-		}
-
-		// For loading counter text
-		// ------------------------
-		temlen = items.slice(0,50).length;
-
-	} else {
-		
-		$w('#stylingblockmobilebox').collapse();
-		$w('#stylingrepeater').data = items;
-		temlen = items.length;
-
-	}
 	
+	// Setting pagination numbers and start and end_id
+	// -----------------------------------------------
+	total_options = items.length;
+	setpagination(total_options, $w('#stylingpagination'));
+	global_styling_items = items;
+
+	// Setting repater items based on start_ind and end_ind
+	// ----------------------------------------------------
+	setTimeout(()=>{$w('#loadingwaitbox').collapse();},2000);
+	$w('#stylingrepeater').data = items.slice(start_ind,end_ind);
 	$w('#stylingrepeater').expand();
 	$w('#catdropdown').enable();
 	$w('#depdropdown').enable();
+
 
 	// Remembering and setting check box value from users selection
 	// ------------------------------------------------------------
@@ -838,13 +1079,13 @@ export async function retrievestylings() {
 		// --------------------
 		$w('#uploadstylingsbutton').expand();
 		$w('#uploadstylingsbutton').enable();
-		$w('#stylingscounterlabel').text = String(temlen) +  " styling blocks loaded. " + String(selected_stylings_main.length) + " styling block(s) selected. You can now submit your selection."
+		$w('#stylingscounterlabel').text = String(items.length) +  " styling blocks loaded. " + String(selected_stylings_main.length) + " styling block(s) selected. You can now submit your selection."
 
 	} else {
 		// Disable upload button
 		// --------------------
 		$w('#uploadstylingsbutton').disable();
-		$w('#stylingscounterlabel').text = String(temlen) + " styling blocks loaded. " + String(selected_stylings_main.length) + " styling block(s) selected. Minimum required: " + String(threshold_styling_select) + "."
+		$w('#stylingscounterlabel').text = String(items.length) + " styling blocks loaded. " + String(selected_stylings_main.length) + " styling block(s) selected. Minimum required: " + String(threshold_styling_select) + "."
 	}
 
 }
@@ -917,7 +1158,7 @@ export async function uploadstylingsbutton_click(event) {
 
 	// Actual trigger
 	// --------------
-	prepareconfirmedstylings(main_user_id, main_task_id, getcorrectstring(selected_stylings_main))
+	prepareconfirmedstylings(main_user_id, main_task_id, getcorrectstring(selected_stylings_main),userdevice, pmate_userid, pmate_sessionid, pmate_usertype, String(timeelapsed(pmate_sessionid)))
 		.then( async function(url_response) {
 
 			if (url_response === "Thread started") {
@@ -957,6 +1198,7 @@ export async function load_all_patterns(user_id, task_id) {
 	$w('#allpatternsrepeater').collapse();
 	$w('#allpatternsrepeater').data = [];
 	$w('#createtexturesbutton').disable();
+	$w('#swatchpagination').collapse();
 
 	var items = [];
 
@@ -982,46 +1224,20 @@ export async function load_all_patterns(user_id, task_id) {
 	// -----------------
 	$w('#pickedpatternscounterlabel').text = "Loading swatches..";
 	$w('#loadingwaitbox').expand();
-	// Checking userdevice
-	// -------------------
-	var temlen;
-	if (userdevice.toLowerCase().includes("mobile")) {
 
-		$w('#swatchesmobilebox').expand();
-		$w('#allpatternsrepeater').data = items.slice(0,50);
+	// Setting pagination numbers and start and end_id
+	// -----------------------------------------------
+	total_options = items.length;
+	setpagination(total_options, $w('#swatchpagination'));
+	global_swatch_items = items;
 
-		if (items.length === items.slice(0,50).length ){
-			$w('#swatchesmobiletext').text = "Showing " + String(items.slice(0,50).length) + " options. Switch to desktop for a seamless experience.";
-		} else {
-			$w('#swatchesmobiletext').text = "Showing only " + String(items.slice(0,50).length) + " of " + String(items.length) + " options to be mindful of your phone's memory. Switch to desktop for a seamless experience.";
-		}
-
-		// For loading counter text
-		// ------------------------
-		temlen = items.slice(0,50).length;
-
-	} else {
-		
-		$w('#swatchesmobilebox').collapse();
-		$w('#allpatternsrepeater').data = items;
-		temlen = items.length;
-
-	}
-	
+	// Setting repater items based on start_ind and end_ind
+	// ----------------------------------------------------
+	setTimeout(()=>{$w('#loadingwaitbox').collapse();},2000);
+	$w('#allpatternsrepeater').data = items.slice(start_ind,end_ind);
 	$w('#allpatternsrepeater').expand();
-	$w('#pickedpatternscounterlabel').text = String(temlen) + " swatches loaded. Start selecting!";
-
-	// Using setouttime to show loading
-	// --------------------------------
-	var settimeouttimer;
-	if (items.length < 200) {
-		settimeouttimer = 5000;
-	} else if (items.length >= 200 && items.length < 500 ) {
-		settimeouttimer = 10000;
-	} else {
-		settimeouttimer = 15000;
-	}
-	setTimeout(()=>{$w('#loadingwaitbox').collapse();},settimeouttimer);
+	$w('#pickedpatternscounterlabel').text = "Showing " + String(start_ind) + " to " + String(end_ind) + " of a total " + String(items.length) + " swatches. Start selecting!";
+	
 
 }
 
@@ -1074,9 +1290,9 @@ export function selectpatternchkbox_change(event) {
 
 	// Setting countertext label text
 	// ------------------------------
-	$w('#pickedpatternscounterlabel').text = countertext
-	$w('#floatingbox').show()
-	$w('#floatingcounterlabel').text =  countertext
+	$w('#pickedpatternscounterlabel').text = countertext;
+	$w('#floatingbox').show();
+	$w('#floatingcounterlabel').text =  countertext;
 
 
 }
@@ -1092,7 +1308,7 @@ export async function createtexturesbutton_click(event) {
 	
 	// Actual trigger
 	// --------------
-	createtexturesforselection(main_user_id, main_task_id, getcorrectstring(selected_patterns_main))
+	createtexturesforselection(main_user_id, main_task_id, getcorrectstring(selected_patterns_main), userdevice, pmate_userid, pmate_sessionid, pmate_usertype, String(timeelapsed(pmate_sessionid)))
 		.then(function(url_response) {
 			if (url_response === "Thread started") {
 				// Just reload the page
@@ -1180,7 +1396,7 @@ export async function generateideasbutton_click(event) {
 	var no_options = 5;
 
 	//let url_reponse = await 
-	generateideasforuser(main_user_id, main_task_id, main_gen_id, range_name, styling_prefix, no_options)
+	generateideasforuser(main_user_id, main_task_id, main_gen_id, range_name, styling_prefix, no_options, userdevice, pmate_userid, pmate_sessionid, pmate_usertype, String(timeelapsed(pmate_sessionid)))
 		.then( function(url_response) {
 			if (url_response === "Thread started") {
 				// Refresh items in box
