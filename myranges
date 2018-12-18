@@ -33,6 +33,7 @@ $w.onReady(function () {
 			// 1.1. Setting main user id
 			// -----------------------
 			$w('#alerttext').text += "Got user email.."
+			console.log("Got user email..");
 			main_user_id = user;
 			settaskrepeateritemssingeshot(main_user_id);
 
@@ -67,6 +68,7 @@ export async function settaskrepeateritemssingeshot(){
 	$w('#listtasksrepeater').data = [];
 	var items = [];
 	$w('#alerttext').text += "Calling geteverything API.." + String(main_user_id)
+	console.log("Calling geteverything API.." + String(main_user_id));
 	
 	//var url_reponse = await geteverythingfortaskpage(main_user_id);
 
@@ -77,6 +79,7 @@ export async function settaskrepeateritemssingeshot(){
 				// --------------
 
 				$w('#alerttext').text += "Got geteverything API response.."
+				console.log("Got API response");
 
 				if (url_reponse === "NO TASKS FOUND"){
 
@@ -128,24 +131,32 @@ export async function settaskrepeateritemssingeshot(){
 					// --------------------------------------------------
 					for (var keys in sort_keys) {
 						
-						// 1. Getting its taskmessage
-						// --------------------------
-						var taskmessage = returnmasterstatus(url_reponse[sort_keys[keys]]["task_status_new_patterns"], url_reponse[sort_keys[keys]]["task_status_prepare_stylings"], url_reponse[sort_keys[keys]]["task_status_create_textures"]);
+						try {
+							// 1. Getting its taskmessage
+							// --------------------------
+							var taskmessage = returnmasterstatus(url_reponse[sort_keys[keys]]["task_status_new_patterns"], url_reponse[sort_keys[keys]]["task_status_prepare_stylings"], url_reponse[sort_keys[keys]]["task_status_create_textures"]);
+							//console.log(taskmessage);
+							
+							items.push({
+									"task_id": sort_keys[keys],
+									"mast_message": taskmessage[0]["master_status"],
+									"_id": sort_keys[keys],
+									"themes_urls": url_reponse[sort_keys[keys]]["themes_url"],
+									"new_pats": taskmessage[0]["new_pats"],
+									"prep_stylings": taskmessage[0]["prep_styling"],
+									"create_textures": taskmessage[0]["create_textures"],
+									"range_urls": url_reponse[sort_keys[keys]]["ranges_url"],
+									"button_label": taskmessage[0]["button_label"],
+									"button_color": taskmessage[0]["button_color"],
+									"taskfile_url": url_reponse[sort_keys[keys]]["taskfiles_url"],
+									"created_on": readabletime_taskid(sort_keys[keys]),
+							});
+							
+						} catch (err) {
 
-						items.push({
-						"task_id": sort_keys[keys],
-						"mast_message": taskmessage[0]["master_status"],
-						"_id": sort_keys[keys],
-						"themes_urls": url_reponse[sort_keys[keys]]["themes_url"],
-						"new_pats": taskmessage[0]["new_pats"],
-						"prep_stylings": taskmessage[0]["prep_styling"],
-						"create_textures": taskmessage[0]["create_textures"],
-						"range_urls": url_reponse[sort_keys[keys]]["ranges_url"],
-						"button_label": taskmessage[0]["button_label"],
-						"button_color": taskmessage[0]["button_color"],
-						"taskfile_url": url_reponse[sort_keys[keys]]["taskfiles_url"],
-						"created_on": readabletime_taskid(sort_keys[keys]),
-						})
+							console.log(err.message)
+						}
+		
 
 					}
 
