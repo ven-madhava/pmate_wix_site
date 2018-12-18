@@ -1,0 +1,652 @@
+// For full API documentation, including code examples, visit http://wix.to/94BuAAs
+
+// imports
+// -------
+import { getapilogs } from 'backend/aModule';
+//create_new_patterns
+//prepare_stylings
+//create_textures
+//generate_ideas
+
+
+// page specific initialisations
+// -----------------------------
+var from_ts;
+var to_ts;
+var to_ts_plus;
+var from_date;
+var to_date;
+var red_color = "#FF4040";
+var green_color = "#41BAAE";
+var blue_color = "#00A6FF";
+
+var retusers_list_mob = {};
+retusers_list_mob ["create_new_patterns"] = [];
+retusers_list_mob ["prepare_stylings"] = [];
+retusers_list_mob ["create_textures"] = [];
+retusers_list_mob ["generate_ideas"] = [];
+
+var retusers_list_desktop = [];
+retusers_list_desktop ["create_new_patterns"] = [];
+retusers_list_desktop ["prepare_stylings"] = [];
+retusers_list_desktop ["create_textures"] = [];
+retusers_list_desktop ["generate_ideas"] = [];
+
+var retusers_list_tablet = [];
+retusers_list_tablet ["create_new_patterns"] = [];
+retusers_list_tablet ["prepare_stylings"] = [];
+retusers_list_tablet ["create_textures"] = [];
+retusers_list_tablet ["generate_ideas"] = [];
+
+var allretusers_list = [];
+
+
+
+
+
+
+$w.onReady(function () {
+	//TODO: write your page related code here...
+
+	$w('#submitdates').disable();
+
+});
+
+// 0.-2 Reset arrays
+// -----------------
+function resetarrays(){
+
+	retusers_list_mob = {};
+	retusers_list_mob ["create_new_patterns"] = [];
+	retusers_list_mob ["prepare_stylings"] = [];
+	retusers_list_mob ["create_textures"] = [];
+	retusers_list_mob ["generate_ideas"] = [];
+
+	retusers_list_desktop = [];
+	retusers_list_desktop ["create_new_patterns"] = [];
+	retusers_list_desktop ["prepare_stylings"] = [];
+	retusers_list_desktop ["create_textures"] = [];
+	retusers_list_desktop ["generate_ideas"] = [];
+
+	retusers_list_tablet = [];
+	retusers_list_tablet ["create_new_patterns"] = [];
+	retusers_list_tablet ["prepare_stylings"] = [];
+	retusers_list_tablet ["create_textures"] = [];
+	retusers_list_tablet ["generate_ideas"] = [];
+
+	allretusers_list = [];
+}
+
+// 0.-1 Work out avg minutes
+// -------------------------
+function returnavgmins(duration,users){
+
+	// Initialisation
+	// --------------
+	var output;
+
+	// Checking condition
+	// ------------------
+	if (String(duration/users).toLowerCase().includes("nan") || String(duration/users).toLowerCase().includes("infinity") ) {
+
+		output = "0";
+
+	} else {
+		
+		// Converting to minutes
+		// ---------------------
+		duration = duration/60;
+		output = String(Math.round((duration/users)*100)/100)
+	}
+	return output;
+
+}
+
+
+// 0. Returning readable time
+// --------------------------
+export function readabletime_timestamp(ts) {
+
+	// 1. Getting timestamp and Converting to integer
+	// ----------------------------------------------
+	var timestamp = parseInt(ts, 10);
+	
+	// 2. Convertion
+	// -------------
+	var timeindate = new Date(timestamp);
+	var readable = timeindate.toLocaleString();
+	return readable
+
+}
+
+// Setting values 
+// --------------
+function setvalues(){
+
+	// Setting values
+	// --------------
+	from_date = $w('#fromdatepicker').value.toDateString()
+	to_date = $w('#todatepicker').value.toDateString()
+
+	from_ts = $w('#fromdatepicker').value.getTime();
+	to_ts = $w('#todatepicker').value.getTime();
+	to_ts_plus = to_ts + (24*60*60*1000 - 1)
+	
+	$w('#testtext').text = readabletime_timestamp(from_ts) + " to " + readabletime_timestamp(to_ts_plus)
+	$w('#infobox').collapse();
+
+	$w('#overviewrepeater').data = [];
+	$w('#overviewrepeater').collapse();
+	$w('#submitdates').enable();
+
+
+}
+
+// 1. From datepicker change
+// --------------------------
+export function fromdatepicker_change(event) {
+	
+	// Enable todatepicker and set its min date to value of fromdate
+	// -------------------------------------------------------------
+	$w('#todatepicker').enable();
+	$w('#todatepicker').minDate = $w('#fromdatepicker').value;
+	$w('#todatepicker').value = $w('#fromdatepicker').value;
+	setvalues();
+
+}
+
+// 2. To datepicker change
+// -----------------------
+export function todatepicker_change(event) {
+	
+	// Setting values
+	// --------------
+	setvalues();
+
+}
+
+// 3. Submit button code
+// ----------------------
+export function submitdates_click(event) {
+
+	// api_called values - create_new_patterns, prepare_stylings, create_textures, generate_ideas
+
+	// UI
+	// --
+	resetarrays();
+	$w('#submitdates').disable();
+	$w('#submitdates').label = "Working.."
+
+	
+	// Calling api log API
+	// -------------------
+	getapilogs(String(from_ts), String(to_ts_plus))
+		.then( function(url_response) {
+			
+			// Getting number of sessions
+			// --------------------------
+			var no_sessions = Object.keys(url_response).length;
+
+			// Setting repeater items
+			// ----------------------
+			if (no_sessions > 0) {
+
+				// Sessions found & some initialisaions
+				// ------------------------------------
+				var no_session_actual = 0;
+				var mtotal = 0;
+				var mavg = 0;
+				var dtotal = 0;
+				var davg = 0;
+				var ttotal = 0;
+				var tavg = 0;
+				var nwtotal = 0;
+				var nwavg = 0
+				var retotal = 0;
+				var retavg = 0;
+				var mnew = 0;
+				var mret = 0;
+				var dnew = 0;
+				var dret = 0;
+				var tnew = 0
+				var tret = 0;
+
+				// Just using one master array for consolication
+				// ----------------------------------------------
+				var cons_items = {};
+
+				// total
+				// -----
+				cons_items ["total"] = {};
+				cons_items ["total"] ["total"] = 0;
+
+				cons_items ["total"] ["mobile_total"] = 0;
+				cons_items ["total"] ["mobile_avg_duration"] = 0;
+
+				cons_items ["total"] ["desktop_total"] = 0;
+				cons_items ["total"] ["desktop_avg_duration"] = 0;
+
+				cons_items ["total"] ["tablet_total"] = 0;
+				cons_items ["total"] ["tablet_avg_duration"] = 0;
+
+				cons_items ["total"] ["new_user_total"] = 0;
+				cons_items ["total"] ["new_user_avg_duration"] = 0;
+
+				cons_items ["total"] ["returning_user_total"] = 0;
+				cons_items ["total"] ["returning_avg_duration"] = 0;
+
+				cons_items ["total"] ["mobile_new_user"] = 0;
+				cons_items ["total"] ["mobile_ret_user"] = 0;
+				cons_items ["total"] ["desktop_new_user"] = 0;
+				cons_items ["total"] ["desktop_ret_user"] = 0;
+				cons_items ["total"] ["tablet_new_user"] = 0;
+				cons_items ["total"] ["tablet_ret_user"] = 0;
+
+
+
+				// New patterns
+				// ------------
+				cons_items ["create_new_patterns"] = {};
+				cons_items ["create_new_patterns"] ["total"] = 0;
+
+				cons_items ["create_new_patterns"] ["mobile_total"] = 0;
+				cons_items ["create_new_patterns"] ["mobile_avg_duration"] = 0;
+
+				cons_items ["create_new_patterns"] ["desktop_total"] = 0;
+				cons_items ["create_new_patterns"] ["desktop_avg_duration"] = 0;
+
+				cons_items ["create_new_patterns"] ["tablet_total"] = 0;
+				cons_items ["create_new_patterns"] ["tablet_avg_duration"] = 0;
+
+				cons_items ["create_new_patterns"] ["new_user_total"] = 0;
+				cons_items ["create_new_patterns"] ["new_user_avg_duration"] = 0;
+
+				cons_items ["create_new_patterns"] ["returning_user_total"] = 0;
+				cons_items ["create_new_patterns"] ["returning_avg_duration"] = 0;
+
+				cons_items ["create_new_patterns"] ["mobile_new_user"] = 0;
+				cons_items ["create_new_patterns"] ["mobile_ret_user"] = 0;
+				cons_items ["create_new_patterns"] ["desktop_new_user"] = 0;
+				cons_items ["create_new_patterns"] ["desktop_ret_user"] = 0;
+				cons_items ["create_new_patterns"] ["tablet_new_user"] = 0;
+				cons_items ["create_new_patterns"] ["tablet_ret_user"] = 0;
+				
+				// prepaer_styling
+				// ---------------
+			
+				cons_items ["prepare_stylings"] = {}
+				cons_items ["prepare_stylings"] ["total"] = 0;
+
+				cons_items ["prepare_stylings"] ["mobile_total"] = 0;
+				cons_items ["prepare_stylings"] ["mobile_avg_duration"] = 0;
+
+				cons_items ["prepare_stylings"] ["desktop_total"] = 0;
+				cons_items ["prepare_stylings"] ["desktop_avg_duration"] = 0;
+
+				cons_items ["prepare_stylings"] ["tablet_total"] = 0;
+				cons_items ["prepare_stylings"] ["tablet_avg_duration"] = 0;
+
+				cons_items ["prepare_stylings"] ["new_user_total"] = 0;
+				cons_items ["prepare_stylings"] ["new_user_avg_duration"] = 0;
+
+				cons_items ["prepare_stylings"] ["returning_user_total"] = 0;
+				cons_items ["prepare_stylings"] ["returning_avg_duration"] = 0;
+
+				cons_items ["prepare_stylings"] ["mobile_new_user"] = 0;
+				cons_items ["prepare_stylings"] ["mobile_ret_user"] = 0;
+				cons_items ["prepare_stylings"] ["desktop_new_user"] = 0;
+				cons_items ["prepare_stylings"] ["desktop_ret_user"] = 0;
+				cons_items ["prepare_stylings"] ["tablet_new_user"] = 0;
+				cons_items ["prepare_stylings"] ["tablet_ret_user"] = 0;
+
+				// create_texture
+				// ---------------
+				cons_items ["create_textures"] = {}
+				cons_items ["create_textures"] ["total"] = 0;
+
+				cons_items ["create_textures"] ["mobile_total"] = 0;
+				cons_items ["create_textures"] ["mobile_avg_duration"] = 0;
+
+				cons_items ["create_textures"] ["desktop_total"] = 0;
+				cons_items ["create_textures"] ["desktop_avg_duration"] = 0;
+
+				cons_items ["create_textures"] ["tablet_total"] = 0;
+				cons_items ["create_textures"] ["tablet_avg_duration"] = 0;
+
+				cons_items ["create_textures"] ["new_user_total"] = 0;
+				cons_items ["create_textures"] ["new_user_avg_duration"] = 0;
+
+				cons_items ["create_textures"] ["returning_user_total"] = 0;
+				cons_items ["create_textures"] ["returning_avg_duration"] = 0;
+
+				cons_items ["create_textures"] ["mobile_new_user"] = 0;
+				cons_items ["create_textures"] ["mobile_ret_user"] = 0;
+				cons_items ["create_textures"] ["desktop_new_user"] = 0;
+				cons_items ["create_textures"] ["desktop_ret_user"] = 0;
+				cons_items ["create_textures"] ["tablet_new_user"] = 0;
+				cons_items ["create_textures"] ["tablet_ret_user"] = 0;
+				
+				// generate ideas
+				// ---------------
+				cons_items ["generate_ideas"] = {}
+				cons_items ["generate_ideas"] ["total"] = 0;
+
+				cons_items ["generate_ideas"] ["mobile_total"] = 0;
+				cons_items ["generate_ideas"] ["mobile_avg_duration"] = 0;
+
+				cons_items ["generate_ideas"] ["desktop_total"] = 0;
+				cons_items ["generate_ideas"] ["desktop_avg_duration"] = 0;
+
+				cons_items ["generate_ideas"] ["tablet_total"] = 0;
+				cons_items ["generate_ideas"] ["tablet_avg_duration"] = 0;
+
+				cons_items ["generate_ideas"] ["new_user_total"] = 0;
+				cons_items ["generate_ideas"] ["new_user_avg_duration"] = 0;
+
+				cons_items ["generate_ideas"] ["returning_user_total"] = 0;
+				cons_items ["generate_ideas"] ["returning_avg_duration"] = 0;
+
+				cons_items ["generate_ideas"] ["mobile_new_user"] = 0;
+				cons_items ["generate_ideas"] ["mobile_ret_user"] = 0;
+				cons_items ["generate_ideas"] ["desktop_new_user"] = 0;
+				cons_items ["generate_ideas"] ["desktop_ret_user"] = 0;
+				cons_items ["generate_ideas"] ["tablet_new_user"] = 0;
+				cons_items ["generate_ideas"] ["tablet_ret_user"] = 0;
+				
+
+				// Setting master array values
+				// ---------------------------
+				for (var key in url_response) {
+					
+					if (String(url_response[key]["pmate_userid"]).includes("pmateuser_1544676774800") || String(url_response[key]["pmate_userid"]).includes("pmateuser_1544678012130")) {
+						
+						// Excluding wenkatesh user in mobile and desktop " do nothing"
+						// ------------------------------------------------------------
+
+					} else {
+
+						//api_called: "prepare_stylings"
+						//duration: "135"
+						//pmate_sessionid: "pmatesession_1544715175610"
+						//pmate_userid: "pmateuser_1544676774800"
+						//task_id: "PMTASK1544715176386"
+						//user_id: "guest@geospot.in"
+						//user_type: "returning_user"
+						//userdevice: "Desktop"
+
+						// actual user session counter
+						// ---------------------------
+						no_session_actual += 1;
+
+						// Setting total values for api_called
+						// -----------------------------------
+						cons_items [url_response[key]["api_called"]] ["total"] += 1;
+
+						// device check
+						// ------------
+						if (String(url_response[key]["userdevice"]).toLowerCase().includes("mobile")){
+
+							cons_items [url_response[key]["api_called"]] ["mobile_total"] += 1;
+							cons_items [url_response[key]["api_called"]] ["mobile_avg_duration"] += parseInt(url_response[key]["duration"],10);
+
+							mtotal += 1;
+							mavg += parseInt(url_response[key]["duration"],10);
+
+							// updating device user stat
+							// -------------------------
+							if (String(url_response[key]["user_type"]).toLowerCase().includes("new_user")) {
+								cons_items [url_response[key]["api_called"]] ["mobile_new_user"] += 1;
+								mnew += 1;
+
+							} else {
+								
+								// Check if returnining user already counted for
+								// ---------------------------------------------
+								if (retusers_list_mob [url_response[key]["api_called"]].indexOf(String(url_response[key]["pmate_userid"])) >= 0){
+
+									// user already counted
+									// --------------------
+
+								} else {
+
+									cons_items [url_response[key]["api_called"]] ["mobile_ret_user"] += 1;
+									mret += 1;
+									retusers_list_mob [url_response[key]["api_called"]].push(String(url_response[key]["pmate_userid"]));
+
+								}
+
+								
+							}
+
+						} else if (String(url_response[key]["userdevice"]).toLowerCase().includes("desktop")){
+
+							cons_items [url_response[key]["api_called"]] ["desktop_total"] += 1;
+							cons_items [url_response[key]["api_called"]] ["desktop_avg_duration"] += parseInt(url_response[key]["duration"],10);
+
+							dtotal += 1;
+							davg += parseInt(url_response[key]["duration"],10);
+
+							// updating device user stat
+							// -------------------------
+							if (String(url_response[key]["user_type"]).toLowerCase().includes("new_user")) {
+								cons_items [url_response[key]["api_called"]] ["desktop_new_user"] += 1;
+								dnew += 1;
+							
+							} else {
+
+								if (retusers_list_desktop [url_response[key]["api_called"]].indexOf(String(url_response[key]["pmate_userid"])) >= 0){
+
+									// user already counted
+									// --------------------
+
+								} else {
+
+									cons_items [url_response[key]["api_called"]] ["desktop_ret_user"] += 1;
+									dret += 1;
+									retusers_list_desktop [url_response[key]["api_called"]].push(String(url_response[key]["pmate_userid"]));
+								}
+
+							}
+
+
+						} else if (String(url_response[key]["userdevice"]).toLowerCase().includes("tablet")){
+
+							cons_items [url_response[key]["api_called"]] ["tablet_total"] += 1;
+							cons_items [url_response[key]["api_called"]] ["tablet_avg_duration"] += parseInt(url_response[key]["duration"],10);
+
+							ttotal += 1;
+							tavg += parseInt(url_response[key]["duration"],10);
+
+							
+							// updating device user stat
+							// -------------------------
+							if (String(url_response[key]["user_type"]).toLowerCase().includes("new_user")) {
+								cons_items [url_response[key]["api_called"]] ["tablet_new_user"] += 1;
+								tnew += 1;
+							} else {
+
+								if (retusers_list_tablet [url_response[key]["api_called"]].indexOf(String(url_response[key]["pmate_userid"])) >= 0){
+
+									// user already counted
+									// --------------------
+									
+								} else {
+
+									cons_items [url_response[key]["api_called"]] ["tablet_ret_user"] += 1;
+									tret += 1;
+									retusers_list_tablet [url_response[key]["api_called"]].push(String(url_response[key]["pmate_userid"]));
+								}
+							}
+
+						}
+						
+						// User type check
+						// ---------------
+						if (String(url_response[key]["user_type"]).toLowerCase().includes("new_user")){
+
+							cons_items [url_response[key]["api_called"]] ["new_user_total"] += 1;
+							cons_items [url_response[key]["api_called"]] ["new_user_avg_duration"] += parseInt(url_response[key]["duration"],10);
+
+							nwtotal += 1;
+							nwavg += parseInt(url_response[key]["duration"],10);
+
+
+
+						} else {
+
+
+							if (allretusers_list.indexOf(String(url_response[key]["pmate_userid"])) >= 0){
+
+								// user already counted
+								// --------------------
+								
+							} else { 
+
+								cons_items [url_response[key]["api_called"]] ["returning_user_total"] += 1;
+								retotal += 1;
+								allretusers_list.push(String(url_response[key]["pmate_userid"]));
+								
+							}
+							
+							cons_items [url_response[key]["api_called"]] ["returning_avg_duration"] += parseInt(url_response[key]["duration"],10);
+							retavg += parseInt(url_response[key]["duration"],10);
+
+						}
+
+					}
+					
+		
+				}
+
+				// Setting total values for display
+				// --------------------------------
+				cons_items ["total"] ["total"] = no_session_actual;
+
+				cons_items ["total"] ["mobile_total"] = mtotal;
+				cons_items ["total"] ["mobile_avg_duration"] = mavg;
+
+				cons_items ["total"] ["desktop_total"] = dtotal;
+				cons_items ["total"] ["desktop_avg_duration"] = davg;
+
+				cons_items ["total"] ["tablet_total"] = ttotal;
+				cons_items ["total"] ["tablet_avg_duration"] = tavg;
+
+				cons_items ["total"] ["new_user_total"] = nwtotal;
+				cons_items ["total"] ["new_user_avg_duration"] = nwavg;
+
+				cons_items ["total"] ["returning_user_total"] = retotal;
+				cons_items ["total"] ["returning_avg_duration"] = retavg;
+
+				cons_items ["total"] ["mobile_new_user"] = mnew;
+				cons_items ["total"] ["mobile_ret_user"] = mret;
+				cons_items ["total"] ["desktop_new_user"] = dnew;
+				cons_items ["total"] ["desktop_ret_user"] = dret;
+				cons_items ["total"] ["tablet_new_user"] = tnew;
+				cons_items ["total"] ["tablet_ret_user"] = tret;
+
+				// Setting avg duration finally
+				// ----------------------------
+				for (key in cons_items){
+
+					cons_items [key] ["mobile_avg_duration"] = returnavgmins(parseInt(cons_items [key] ["mobile_avg_duration"], 10), parseInt(cons_items [key] ["mobile_total"], 10))
+					cons_items [key] ["desktop_avg_duration"] = returnavgmins(parseInt(cons_items [key] ["desktop_avg_duration"], 10), parseInt(cons_items [key] ["desktop_total"], 10))
+					cons_items [key] ["tablet_avg_duration"] = returnavgmins(parseInt(cons_items [key] ["tablet_avg_duration"], 10), parseInt(cons_items [key] ["tablet_total"], 10))
+
+					cons_items [key] ["new_user_avg_duration"] = returnavgmins(parseInt(cons_items [key] ["new_user_avg_duration"], 10), parseInt(cons_items [key] ["new_user_total"], 10))
+					cons_items [key] ["returning_avg_duration"] = returnavgmins(parseInt(cons_items [key] ["returning_avg_duration"], 10), parseInt(cons_items [key] ["returning_user_total"], 10))
+
+
+				}
+
+
+				// Setting overview array for repeater
+				// -----------------------------------
+				var overview_items = []
+				var id_counter = 0;
+				for (key in cons_items) {
+					id_counter += 1;
+					overview_items.push({ 
+						"label": String(key).replace("_", " "), 
+						"_id": String(id_counter), 
+						"total": cons_items [key] ["total"],
+						"mtotal":cons_items [key] ["mobile_total"],
+						"mavg":cons_items [key] ["mobile_avg_duration"],
+						"dtotal":cons_items [key] ["desktop_total"],
+						"davg":cons_items [key] ["desktop_avg_duration"],
+						"ttotal":cons_items [key] ["tablet_total"],
+						"tavg":cons_items [key] ["tablet_avg_duration"],
+						"nwtotal":cons_items [key] ["new_user_total"],
+						"nwavg":cons_items [key] ["new_user_avg_duration"],
+						"retotal":cons_items [key] ["returning_user_total"],
+						"retavg":cons_items [key] ["returning_avg_duration"],
+						"mnew":cons_items [key] ["mobile_new_user"],
+						"mret":cons_items [key] ["mobile_ret_user"],
+						"dnew":cons_items [key] ["desktop_new_user"],
+						"dret":cons_items [key] ["desktop_ret_user"],
+						"tnew":cons_items [key] ["tablet_new_user"],
+						"tret":cons_items [key] ["tablet_ret_user"],
+
+					 });
+
+				}
+				
+				// Setting overview repeater
+				// -------------------------
+				$w('#overviewrepeater').onItemReady(($item, itemData, index) => {
+						
+						// Setting items
+						// -------------
+						$item("#totalno").text = String(itemData.total);
+						$item("#overviewrepeatelabel").text = itemData.label;
+
+						$item("#mobileheader").text = "Mobile";
+						$item("#mobiletotal").text = String(itemData.mtotal);
+						$item("#mobilenewusers").text = String(itemData.mnew);
+						$item("#mobileretusers").text = String(itemData.mret);
+						$item("#mobileavgduration").text = String(itemData.mavg);
+
+						$item("#desktopheader").text = "Desktop";
+						$item("#desktoptotal").text = String(itemData.dtotal);
+						$item("#desktopnewusers").text = String(itemData.dnew);
+						$item("#desktopretusers").text = String(itemData.dret);
+						$item("#desktopavgduration").text = String(itemData.davg);
+
+						$item("#tabletheader").text = "Tablet";
+						$item("#tablettotal").text = String(itemData.ttoal);
+						$item("#tabletnewusers").text = String(itemData.tnew);
+						$item("#tabletretusers").text = String(itemData.tret);
+						$item("#tabletavgduration").text = String(itemData.tavg);
+
+
+
+				});
+				$w('#overviewrepeater').data = overview_items;
+				$w('#overviewrepeater').expand();
+
+				// UI
+				// --
+				$w('#submitdates').enable();
+				$w('#submitdates').label = "Submit";
+				$w('#testtext').text = readabletime_timestamp(from_ts) + " to " + readabletime_timestamp(to_ts_plus) + " (" + String(no_session_actual) + " sessions)."
+				$w('#infobox').expand();
+
+			} else {
+
+				// No sessions got
+				// ---------------
+				$w('#overviewrepeater').data = [];
+				$w('#overviewrepeater').collapse();
+				$w('#testtext').text = readabletime_timestamp(from_ts) + " to " + readabletime_timestamp(to_ts_plus) + " - NOTHING HERE!"
+				
+				// UI
+				// --
+				$w('#submitdates').enable();
+				$w('#submitdates').label = "Submit";
+				$w('#infobox').expand();
+
+
+			}
+		
+		
+		});
+}
